@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PMP AI - 项目管理平台
 
-## Getting Started
+PMP AI 是一个现代化的项目管理平台，集成了人工智能功能，旨在提高项目管理效率和决策质量。该平台提供了直观的用户界面和强大的功能，帮助团队更好地规划、执行和监控项目。
 
-First, run the development server:
+## 🌟 功能特点
 
+- **智能仪表盘**：实时监控项目进度、资源分配和关键指标
+- **AI 助手**：提供智能建议和自动化任务处理
+- **项目管理**：全面的项目创建、跟踪和管理功能
+- **报告分析**：自动生成详细的项目报告和数据分析
+- **知识库**：集中存储和管理项目文档和知识资源
+- **个性化设置**：灵活的系统配置和用户偏好设置
+
+## 🛠️ 技术栈
+
+- **前端框架**：Next.js 15.2.0 (React 19)
+- **样式解决方案**：Tailwind CSS 4
+- **UI 组件**：Shadcn UI
+- **状态管理**：Zustand
+- **数据获取**：TanStack Query (React Query)
+- **表单处理**：React Hook Form + Zod
+- **图表可视化**：Recharts
+- **认证**：NextAuth.js
+
+## 📦 安装指南
+
+1. 克隆仓库
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/liusai0820/PMP_AI_NEW.git
+cd PMP_AI_NEW
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. 安装依赖
+```bash
+npm install
+# 或
+yarn install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. 启动开发服务器
+```bash
+npm run dev
+# 或
+yarn dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. 在浏览器中打开 [http://localhost:3000](http://localhost:3000) 查看应用
 
-## Learn More
+## 🚀 使用说明
 
-To learn more about Next.js, take a look at the following resources:
+1. **登录系统**：使用您的账号凭证登录系统
+2. **仪表盘**：查看项目概览和关键指标
+3. **项目管理**：创建和管理项目，分配任务和资源
+4. **AI 助手**：使用智能助手获取建议和自动化任务
+5. **报告**：生成和查看项目报告和分析
+6. **设置**：根据需要自定义系统和个人偏好
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔧 开发指南
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 使用 `npm run build` 构建生产版本
+- 使用 `npm run lint` 运行代码检查
+- 使用 `npm run start` 启动生产服务器
 
-## Deploy on Vercel
+## 📄 许可证
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+[MIT](LICENSE)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 👥 贡献者
+
+- [刘赛](https://github.com/liusai0820)
+
+## 📞 联系方式
+
+如有任何问题或建议，请通过以下方式联系我们：
+
+- 邮箱：admin@pmp.ai
+- GitHub Issues：[提交问题](https://github.com/liusai0820/PMP_AI_NEW/issues)
