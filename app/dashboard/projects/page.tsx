@@ -62,43 +62,37 @@ export default function ProjectsPage() {
   };
   
   return (
-    <div className="container mx-auto px-4 py-6">
-      <header className="mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">项目档案</h1>
-            <p className="mt-2 text-gray-600">管理和查看所有项目信息</p>
-          </div>
-          <Link href="/dashboard/projects/new" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-            新建项目
-          </Link>
-        </div>
+    <div className="container mx-auto px-2 py-3">
+      <header className="mb-3 flex justify-end items-center">
+        <Link href="/dashboard/projects/new" className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm">
+          新建项目
+        </Link>
       </header>
       
       <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-3 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row justify-between items-center">
-            <div className="w-full sm:w-64 mb-4 sm:mb-0">
+            <div className="w-full sm:w-64 mb-2 sm:mb-0">
               <div className="relative">
                 <input
                   type="text"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="搜索项目..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
               </div>
             </div>
             <div className="flex space-x-2">
-              <button className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+              <button className="px-2 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50">
                 筛选
               </button>
-              <button className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+              <button className="px-2 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50">
                 导出
               </button>
             </div>
@@ -111,7 +105,7 @@ export default function ProjectsPage() {
               <tr>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('id')}
                 >
                   <div className="flex items-center">
@@ -121,7 +115,7 @@ export default function ProjectsPage() {
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center">
@@ -131,7 +125,7 @@ export default function ProjectsPage() {
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('department')}
                 >
                   <div className="flex items-center">
@@ -141,7 +135,7 @@ export default function ProjectsPage() {
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('progress')}
                 >
                   <div className="flex items-center">
@@ -151,7 +145,7 @@ export default function ProjectsPage() {
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('documents')}
                 >
                   <div className="flex items-center">
@@ -159,7 +153,7 @@ export default function ProjectsPage() {
                     {getSortIcon('documents')}
                   </div>
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
                 </th>
               </tr>
@@ -167,38 +161,50 @@ export default function ProjectsPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {sortedProjects.map((project) => (
                 <tr key={project.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                     {project.id}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {project.name}
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                    <Link href={`/dashboard/projects/${project.id}`} className="text-blue-600 hover:text-blue-900">
+                      {project.name}
+                    </Link>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                     {project.department}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center">
-                      <div className="w-full max-w-xs">
-                        <div className="h-2 bg-gray-200 rounded-full">
-                          <div
-                            className={`h-2 rounded-full ${
-                              project.progress < 30 ? 'bg-red-500' : 
-                              project.progress < 70 ? 'bg-yellow-500' : 
-                              'bg-green-500'
-                            }`}
-                            style={{ width: `${project.progress}%` }}
-                          ></div>
-                        </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div 
+                          className={`h-2.5 rounded-full ${
+                            project.progress >= 80 ? 'bg-green-500' : 
+                            project.progress >= 50 ? 'bg-blue-500' : 
+                            project.progress >= 30 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`} 
+                          style={{ width: `${project.progress}%` }}
+                        ></div>
                       </div>
-                      <span className="ml-2 text-sm text-gray-500">{project.progress}%</span>
+                      <span className="ml-2 text-xs">{project.progress}%</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {project.documents}
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                    <div className="flex items-center">
+                      <svg className="h-4 w-4 text-gray-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      {project.documents}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">查看</button>
-                    <button className="text-gray-600 hover:text-gray-900">编辑</button>
+                  <td className="px-3 py-2 whitespace-nowrap text-right text-xs font-medium">
+                    <Link href={`/dashboard/projects/${project.id}`} className="text-blue-600 hover:text-blue-900 mr-2">
+                      查看
+                    </Link>
+                    <Link href={`/dashboard/projects/${project.id}/edit`} className="text-indigo-600 hover:text-indigo-900 mr-2">
+                      编辑
+                    </Link>
+                    <button className="text-red-600 hover:text-red-900">
+                      删除
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -206,45 +212,35 @@ export default function ProjectsPage() {
           </table>
         </div>
         
-        {sortedProjects.length === 0 && (
-          <div className="py-12 text-center">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">未找到项目</h3>
-            <p className="mt-1 text-sm text-gray-500">尝试使用其他搜索条件或创建新项目。</p>
-          </div>
-        )}
-        
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div className="bg-white px-3 py-2 border-t border-gray-200 flex items-center justify-between">
           <div className="flex-1 flex justify-between sm:hidden">
-            <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            <button className="relative inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
               上一页
             </button>
-            <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            <button className="ml-3 relative inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
               下一页
             </button>
           </div>
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-gray-700">
+              <p className="text-xs text-gray-700">
                 显示 <span className="font-medium">1</span> 到 <span className="font-medium">{sortedProjects.length}</span> 条，共 <span className="font-medium">{sortedProjects.length}</span> 条结果
               </p>
             </div>
             <div>
               <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <button className="relative inline-flex items-center px-2 py-1 rounded-l-md border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50">
                   <span className="sr-only">上一页</span>
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </button>
-                <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <button className="relative inline-flex items-center px-3 py-1 border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50">
                   1
                 </button>
-                <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <button className="relative inline-flex items-center px-2 py-1 rounded-r-md border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50">
                   <span className="sr-only">下一页</span>
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                   </svg>
                 </button>

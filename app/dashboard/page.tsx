@@ -1,110 +1,165 @@
 "use client";
 
 import React from "react";
+import { 
+  ProjectAnalysisCharts,
+  EnhancedStatCard,
+  ProjectMonitor
+} from "@/components/dashboard";
+import AIInsights from "@/components/dashboard/AIInsights";
 import RecentActivities from "@/components/dashboard/RecentActivities";
-import { projectData } from "@/lib/mockData";
+import { 
+  projectData, 
+  typeData, 
+  resourceData, 
+  riskMatrixData, 
+  statCardTrends,
+  aiInsightsData,
+  getMockAIInsights
+} from "@/lib/mockData";
+import { useEffect, useState } from "react";
 
-// 统计卡片组件
-const StatCard = ({ title, value, change, color }: { title: string; value: string; change: string; color: string }) => {
-  const isPositive = !change.includes('-');
-  return (
-    <div className={`bg-white rounded-lg shadow p-4 border-l-4 ${color}`}>
-      <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-      <div className="mt-2 flex items-baseline">
-        <p className="text-2xl font-semibold">{value}</p>
-        <p className={`ml-2 text-sm ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-          {isPositive ? '↑' : '↓'} {change}
-        </p>
-      </div>
-    </div>
-  );
+// 使用从mockData导入的InsightItem类型
+type InsightItem = {
+  id: string;
+  title: string;
+  description: string;
+  impact: 'high' | 'medium' | 'low';
+  projectId: string;
+  projectName: string;
+  timestamp: string;
 };
 
 export default function Dashboard() {
+  const [insights, setInsights] = useState<InsightItem[]>(aiInsightsData);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getMockAIInsights();
+        setInsights(data);
+      } catch (error) {
+        console.error("获取AI洞察数据失败:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">仪表盘</h1>
+    <div className="container mx-auto px-2 py-3">
+      {/* 筛选器区域 */}
+      <div className="flex flex-col md:flex-row justify-end items-start md:items-center mb-3">
+        <div className="flex items-center space-x-2">
+          <select className="px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="all">所有项目</option>
+            <option value="active">进行中项目</option>
+            <option value="completed">已完成项目</option>
+          </select>
+          <select className="px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="month6">近6个月</option>
+            <option value="month3">近3个月</option>
+            <option value="month1">近1个月</option>
+          </select>
+        </div>
+      </div>
       
-      {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard 
+      {/* 统计卡片区 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+        <EnhancedStatCard 
           title="总项目数" 
           value="183" 
           change="12%" 
-          color="border-blue-500" 
+          changePercent={12}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          }
+          trendData={statCardTrends.totalProjects}
+          gradientFrom="#3b82f6"
+          gradientTo="#1e40af"
         />
-        <StatCard 
+        <EnhancedStatCard 
           title="已完成项目" 
           value="137" 
           change="8%" 
-          color="border-green-500" 
+          changePercent={8}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          }
+          trendData={statCardTrends.completedProjects}
+          gradientFrom="#10b981"
+          gradientTo="#047857"
         />
-        <StatCard 
+        <EnhancedStatCard 
           title="进行中项目" 
           value="38" 
-          change="5%" 
-          color="border-yellow-500" 
+          change="-5%" 
+          changePercent={-5}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+          trendData={statCardTrends.inProgressProjects}
+          gradientFrom="#f59e0b"
+          gradientTo="#b45309"
         />
-        <StatCard 
+        <EnhancedStatCard 
           title="存在风险项目" 
           value="8" 
           change="25%" 
-          color="border-red-500" 
+          changePercent={25}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          }
+          trendData={statCardTrends.riskProjects}
+          gradientFrom="#ef4444"
+          gradientTo="#b91c1c"
         />
       </div>
       
-      {/* 项目趋势图和活动记录 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 项目趋势图 */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h2 className="text-lg font-semibold mb-4">项目趋势</h2>
-            <div className="h-64 w-full">
-              {/* 这里可以集成图表库如 Recharts 或 Chart.js */}
-              <div className="flex items-end h-full space-x-2 pt-4">
-                {projectData.map((data, index) => (
-                  <div key={index} className="flex-1 flex flex-col items-center">
-                    <div className="w-full flex justify-center space-x-1">
-                      <div className="bg-blue-500 w-3 h-16" style={{ height: `${data.在建 * 2}px` }}></div>
-                      <div className="bg-green-500 w-3 h-24" style={{ height: `${data.已完成 * 2}px` }}></div>
-                      <div className="bg-red-500 w-3 h-10" style={{ height: `${data.延期 * 10}px` }}></div>
-                    </div>
-                    <div className="text-xs mt-2">{data.name}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-center mt-4 space-x-4">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-blue-500 mr-1"></div>
-                  <span className="text-xs">在建</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-500 mr-1"></div>
-                  <span className="text-xs">已完成</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-red-500 mr-1"></div>
-                  <span className="text-xs">延期</span>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* 主要内容区 */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+        {/* 左侧区域 - 项目分析与监控图表 */}
+        <div className="lg:col-span-3 space-y-3">
+          {/* 项目监控大盘 */}
+          <ProjectMonitor 
+            healthScore={78} 
+            riskMatrix={riskMatrixData}
+          />
+          
+          {/* 多维度项目分析图表 */}
+          <ProjectAnalysisCharts 
+            trendData={projectData}
+            typeData={typeData}
+            resourceData={resourceData}
+          />
         </div>
         
-        {/* 最近活动 */}
-        <div className="lg:col-span-1">
+        {/* 右侧区域 - AI洞察与活动记录 */}
+        <div className="lg:col-span-1 space-y-3">
+          {/* AI洞察与预测区 */}
+          <AIInsights insights={insights} />
+          
+          {/* 活动与任务整合区 */}
           <RecentActivities />
         </div>
       </div>
       
       {/* 新建项目按钮 */}
-      <div className="fixed bottom-6 right-6">
-        <button className="bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition-colors">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <div className="fixed bottom-4 right-4">
+        <button className="bg-blue-600 text-white rounded-full p-3 shadow-lg hover:bg-blue-700 transition-colors">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
         </button>
       </div>
     </div>
   );
-} 
+}

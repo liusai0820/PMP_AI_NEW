@@ -126,20 +126,8 @@ export default function AssistantPage() {
   };
   
   return (
-    <div className="h-screen flex flex-col">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-2xl font-bold text-gray-900">智能助手</h1>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-      
-      <div className="flex-1 flex overflow-hidden">
+    <div className="container mx-auto px-2 py-3 h-[calc(100vh-64px)]">
+      <div className="flex h-full overflow-hidden bg-white rounded-lg shadow-sm">
         <ProjectSelector 
           onProjectSelect={handleProjectSelect}
           selectedProject={selectedProject}

@@ -1,11 +1,11 @@
 // 项目趋势数据
 export const projectData = [
-  { name: '1月', 在建: 40, 已完成: 24, 延期: 5 },
-  { name: '2月', 在建: 30, 已完成: 13, 延期: 3 },
-  { name: '3月', 在建: 20, 已完成: 28, 延期: 2 },
-  { name: '4月', 在建: 27, 已完成: 39, 延期: 0 },
-  { name: '5月', 在建: 18, 已完成: 48, 延期: 1 },
-  { name: '6月', 在建: 23, 已完成: 38, 延期: 4 },
+  { name: '1月', 在建: 40, 已完成: 24, 延期: 10, 趋势: 65 },
+  { name: '2月', 在建: 30, 已完成: 28, 延期: 8, 趋势: 59 },
+  { name: '3月', 在建: 20, 已完成: 38, 延期: 5, 趋势: 48 },
+  { name: '4月', 在建: 27, 已完成: 40, 延期: 7, 趋势: 42 },
+  { name: '5月', 在建: 18, 已完成: 48, 延期: 6, 趋势: 38 },
+  { name: '6月', 在建: 23, 已完成: 50, 延期: 4, 趋势: 43 },
 ];
 
 // 项目类型分布数据
@@ -121,41 +121,273 @@ export const analysisResults = {
   ]
 };
 
-// 模拟活动数据
-export async function getMockActivities() {
-  // 模拟API请求延迟
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  return [
-    {
-      id: '1',
-      title: '创建了新项目',
-      description: '项目管理系统升级',
-      timestamp: '2023-10-15 14:30',
-      type: 'create'
-    },
-    {
-      id: '2',
-      title: '更新了任务状态',
-      description: '前端开发任务已完成',
-      timestamp: '2023-10-14 10:15',
-      type: 'update'
-    },
-    {
-      id: '3',
-      title: '添加了新成员',
-      description: '张三加入了开发团队',
-      timestamp: '2023-10-13 09:45',
-      type: 'member'
-    },
-    {
-      id: '4',
-      title: '设置了项目截止日期',
-      description: '项目计划于2023年12月完成',
-      timestamp: '2023-10-12 16:20',
-      type: 'deadline'
-    }
-  ];
+// 模拟数据
+
+// 项目类型分布数据
+export const typeData = [
+  { name: '基础设施', value: 35 },
+  { name: '软件开发', value: 45 },
+  { name: '研发项目', value: 25 },
+  { name: '市场推广', value: 15 },
+  { name: '内部改进', value: 20 },
+];
+
+// 资源分配数据
+export const resourceData = [
+  { name: '基础设施', 人力资源: 30, 资金投入: 120, 设备资源: 45 },
+  { name: '软件开发', 人力资源: 50, 资金投入: 80, 设备资源: 20 },
+  { name: '研发项目', 人力资源: 35, 资金投入: 100, 设备资源: 30 },
+  { name: '市场推广', 人力资源: 20, 资金投入: 60, 设备资源: 10 },
+  { name: '内部改进', 人力资源: 25, 资金投入: 40, 设备资源: 15 },
+];
+
+// 项目风险矩阵数据
+export const riskMatrixData = [
+  {
+    id: "risk1",
+    name: "技术方案不成熟",
+    impact: 8,
+    probability: 6,
+    value: 300,
+    category: "技术风险"
+  },
+  {
+    id: "risk2",
+    name: "关键人员流失",
+    impact: 9,
+    probability: 4,
+    value: 250,
+    category: "人员风险"
+  },
+  {
+    id: "risk3",
+    name: "需求频繁变更",
+    impact: 7,
+    probability: 8,
+    value: 280,
+    category: "需求风险"
+  },
+  {
+    id: "risk4",
+    name: "预算超支",
+    impact: 6,
+    probability: 5,
+    value: 200,
+    category: "财务风险"
+  },
+  {
+    id: "risk5",
+    name: "第三方依赖延期",
+    impact: 7,
+    probability: 7,
+    value: 240,
+    category: "外部风险"
+  },
+  {
+    id: "risk6",
+    name: "质量标准未达成",
+    impact: 8,
+    probability: 5,
+    value: 220,
+    category: "质量风险"
+  },
+  {
+    id: "risk7",
+    name: "沟通不畅",
+    impact: 5,
+    probability: 6,
+    value: 180,
+    category: "管理风险"
+  },
+  {
+    id: "risk8",
+    name: "进度延迟",
+    impact: 7,
+    probability: 6,
+    value: 210,
+    category: "进度风险"
+  },
+  {
+    id: "risk9",
+    name: "范围蔓延",
+    impact: 6,
+    probability: 7,
+    value: 230,
+    category: "范围风险"
+  },
+  {
+    id: "risk10",
+    name: "合规问题",
+    impact: 9,
+    probability: 3,
+    value: 190,
+    category: "法律风险"
+  }
+];
+
+// 统计卡片趋势数据
+export const statCardTrends = {
+  totalProjects: [
+    { name: '1月', value: 150 },
+    { name: '2月', value: 155 },
+    { name: '3月', value: 160 },
+    { name: '4月', value: 165 },
+    { name: '5月', value: 170 },
+    { name: '6月', value: 183 }
+  ],
+  completedProjects: [
+    { name: '1月', value: 110 },
+    { name: '2月', value: 115 },
+    { name: '3月', value: 120 },
+    { name: '4月', value: 125 },
+    { name: '5月', value: 130 },
+    { name: '6月', value: 137 }
+  ],
+  inProgressProjects: [
+    { name: '1月', value: 40 },
+    { name: '2月', value: 42 },
+    { name: '3月', value: 45 },
+    { name: '4月', value: 43 },
+    { name: '5月', value: 40 },
+    { name: '6月', value: 38 }
+  ],
+  riskProjects: [
+    { name: '1月', value: 5 },
+    { name: '2月', value: 6 },
+    { name: '3月', value: 7 },
+    { name: '4月', value: 6 },
+    { name: '5月', value: 7 },
+    { name: '6月', value: 8 }
+  ]
+};
+
+// 定义AI洞察数据的类型
+type Impact = 'high' | 'medium' | 'low';
+
+interface InsightItem {
+  id: string;
+  title: string;
+  description: string;
+  impact: Impact;
+  projectId: string;
+  projectName: string;
+  timestamp: string;
 }
 
-// 其他模拟数据函数可以在这里添加 
+// AI洞察数据
+export const aiInsightsData: InsightItem[] = [
+  {
+    id: 'insight-1',
+    title: '项目进度延迟风险',
+    description: '智慧城市项目的关键里程碑已延迟2周，可能影响整体交付时间。',
+    impact: 'high',
+    projectId: 'proj-001',
+    projectName: '智慧城市基础设施建设',
+    timestamp: '2023-06-15T09:30:00Z',
+  },
+  {
+    id: 'insight-2',
+    title: '资源分配不均',
+    description: '研发团队资源过度集中在单个项目，可能导致其他项目进度受阻。',
+    impact: 'medium',
+    projectId: 'proj-003',
+    projectName: '企业数据中台建设',
+    timestamp: '2023-06-14T14:45:00Z',
+  },
+  {
+    id: 'insight-3',
+    title: '预算超支预警',
+    description: '移动应用开发项目已使用75%预算，但仅完成60%工作量，存在超支风险。',
+    impact: 'medium',
+    projectId: 'proj-007',
+    projectName: '移动应用开发与升级',
+    timestamp: '2023-06-13T11:20:00Z',
+  },
+  {
+    id: 'insight-4',
+    title: '质量指标异常',
+    description: '最近代码提交的测试覆盖率下降15%，建议增加单元测试。',
+    impact: 'low',
+    projectId: 'proj-005',
+    projectName: '客户关系管理系统升级',
+    timestamp: '2023-06-12T16:10:00Z',
+  },
+];
+
+// 活动数据
+export const activitiesData = [
+  {
+    id: 'act-001',
+    title: '创建了新项目',
+    description: '张经理创建了新项目"智能客服系统开发"',
+    timestamp: '2023-06-15T10:30:00Z',
+    type: 'create',
+    priority: 'medium',
+    projectId: 'proj-009',
+    projectName: '智能客服系统开发',
+  },
+  {
+    id: 'act-002',
+    title: '更新了项目进度',
+    description: '李工程师将"数据中台建设"项目进度更新为75%',
+    timestamp: '2023-06-15T09:15:00Z',
+    type: 'update',
+    priority: 'low',
+    projectId: 'proj-003',
+    projectName: '企业数据中台建设',
+  },
+  {
+    id: 'act-003',
+    title: '分配了新任务',
+    description: '王项目经理向赵开发分配了"前端界面优化"任务',
+    timestamp: '2023-06-14T16:45:00Z',
+    type: 'assign',
+    priority: 'high',
+    projectId: 'proj-007',
+    projectName: '移动应用开发与升级',
+  },
+  {
+    id: 'act-004',
+    title: '完成了里程碑',
+    description: '团队完成了"基础架构搭建"里程碑',
+    timestamp: '2023-06-14T14:20:00Z',
+    type: 'complete',
+    priority: 'medium',
+    projectId: 'proj-005',
+    projectName: '客户关系管理系统升级',
+  },
+  {
+    id: 'act-005',
+    title: '添加了评论',
+    description: '张经理对"接口文档"添加了评论',
+    timestamp: '2023-06-13T11:30:00Z',
+    type: 'comment',
+    priority: 'low',
+    projectId: 'proj-007',
+    projectName: '移动应用开发与升级',
+  },
+  {
+    id: 'act-006',
+    title: '更新了风险状态',
+    description: '系统自动将"服务器迁移延迟"风险级别提升为高',
+    timestamp: '2023-06-12T09:10:00Z',
+    type: 'update',
+    priority: 'high',
+    projectId: 'proj-001',
+    projectName: '智慧城市基础设施建设',
+  },
+];
+
+// 模拟获取活动数据的函数
+export const getMockActivities = async () => {
+  // 模拟网络请求延迟
+  await new Promise(resolve => setTimeout(resolve, 800));
+  return activitiesData;
+};
+
+// 模拟获取AI洞察数据的函数
+export const getMockAIInsights = async (): Promise<InsightItem[]> => {
+  // 模拟网络请求延迟
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return aiInsightsData;
+}; 

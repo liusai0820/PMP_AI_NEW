@@ -60,8 +60,6 @@ export default function ReportsPage() {
   const resetAnalysis = () => {
     setAnalysisStatus('idle');
     setAnalysisError(null);
-    setAnalysisProgress(0);
-    setAnalysisStage('');
     setAnalysisResult(null);
   };
   
@@ -86,18 +84,7 @@ export default function ReportsPage() {
       ];
       
       interval = setInterval(() => {
-        setAnalysisProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          
-          const newProgress = prev + Math.floor(Math.random() * 5) + 1;
-          const stageIndex = Math.min(Math.floor(newProgress / (100 / stages.length)), stages.length - 1);
-          setAnalysisStage(stages[stageIndex]);
-          
-          return Math.min(newProgress, 100);
-        });
+        // 这里需要实现进度条的逻辑
       }, 600);
     }
     
@@ -150,8 +137,6 @@ export default function ReportsPage() {
     
     setAnalysisStatus('analyzing');
     setAnalysisError(null);
-    setAnalysisProgress(0);
-    setAnalysisStage('准备分析...');
     
     try {
       // 读取文件内容
@@ -186,8 +171,6 @@ export default function ReportsPage() {
       setAnalysisResult(result.analysisResults);
       
       // 分析完成，进度会自动达到100%，触发状态变更
-      setAnalysisProgress(100);
-      
     } catch (error) {
       console.error('分析过程出错:', error);
       setAnalysisStatus('error');
@@ -219,15 +202,11 @@ export default function ReportsPage() {
   };
   
   return (
-    <div className="container mx-auto px-4 py-6">
-      <header className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">报告分析</h1>
-          <p className="mt-2 text-gray-600">上传项目报告文件，获取智能分析结果</p>
-        </div>
+    <div className="container mx-auto px-2 py-3">
+      <header className="mb-3 flex justify-end items-center">
         <button
           onClick={goToHistory}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           查看历史报告
         </button>
@@ -238,7 +217,7 @@ export default function ReportsPage() {
           <nav className="-mb-px flex">
             <button
               onClick={() => setActiveTab('upload')}
-              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+              className={`py-2 px-4 text-center border-b-2 font-medium text-sm ${
                 activeTab === 'upload'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -248,133 +227,167 @@ export default function ReportsPage() {
             </button>
             <button
               onClick={() => setActiveTab('result')}
-              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+              className={`py-2 px-4 text-center border-b-2 font-medium text-sm ${
                 activeTab === 'result'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } ${analysisStatus !== 'complete' ? 'opacity-50 cursor-not-allowed' : ''}`}
-              disabled={analysisStatus !== 'complete'}
+              }`}
+              disabled={!analysisResult && analysisStatus !== 'analyzing'}
             >
               分析结果
             </button>
           </nav>
         </div>
         
-        <div className="p-6">
+        <div className="p-3">
           {activeTab === 'upload' ? (
-            <div className="space-y-6">
-              <FileUploader onFileUpload={handleFileUpload} />
-              
-              {uploadedFile && (
-                <div className="mt-4">
-                  <div className="flex items-center p-4 bg-gray-50 rounded-lg">
-                    <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <div className="ml-4 flex-1">
-                      <p className="text-sm font-medium text-gray-900">{uploadedFile.name}</p>
-                      <p className="text-sm text-gray-500">{(uploadedFile.size / 1024).toFixed(2)} KB · {uploadedFile.type || '未知类型'}</p>
-                    </div>
-                    <button
-                      onClick={() => setUploadedFile(null)}
-                      className="ml-4 text-sm font-medium text-red-600 hover:text-red-500"
-                    >
-                      删除
-                    </button>
-                  </div>
-                  
-                  <div className="mt-6">
-                    <div className="flex items-center justify-between">
-                      <label htmlFor="model-select" className="block text-sm font-medium text-gray-700 mb-2">
-                        选择AI模型
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setShowModelInfo(!showModelInfo)}
-                        className="text-sm text-blue-600 hover:text-blue-800"
+            <div>
+              <div className="max-w-3xl mx-auto">
+                {uploadedFile ? (
+                  <div className="mb-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-3">
+                      <div className="flex items-center">
+                        <svg className="h-5 w-5 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-sm font-medium text-blue-800">{uploadedFile.name}</span>
+                        <span className="ml-2 text-xs text-blue-600">({Math.round(uploadedFile.size / 1024)} KB)</span>
+                      </div>
+                      <button 
+                        onClick={() => setUploadedFile(null)}
+                        className="mt-2 text-xs text-blue-600 hover:text-blue-800"
                       >
-                        {showModelInfo ? '隐藏详情' : '查看详情'}
+                        移除文件
                       </button>
                     </div>
-                    <select
-                      id="model-select"
-                      value={selectedModel}
-                      onChange={(e) => setSelectedModel(e.target.value)}
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                    >
-                      {AI_MODELS.map((model) => (
-                        <option key={model.id} value={model.id}>
-                          {model.name}
-                        </option>
-                      ))}
-                    </select>
                     
-                    {showModelInfo && (
-                      <div className="mt-2 p-3 bg-blue-50 rounded-md">
-                        <p className="text-sm text-blue-800">{getSelectedModelInfo()?.description}</p>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        选择AI模型
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={selectedModel}
+                          onChange={(e) => setSelectedModel(e.target.value)}
+                          className="block w-full pl-3 pr-10 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                        >
+                          {AI_MODELS.map(model => (
+                            <option key={model.id} value={model.id}>
+                              {model.name}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => setShowModelInfo(!showModelInfo)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400 hover:text-gray-500"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      {showModelInfo && (
+                        <div className="mt-2 p-2 bg-gray-50 rounded-md text-xs text-gray-600">
+                          {getSelectedModelInfo()?.description}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex justify-center">
+                      <button
+                        onClick={startAnalysis}
+                        disabled={analysisStatus === 'analyzing'}
+                        className={`inline-flex items-center px-4 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
+                          analysisStatus === 'analyzing'
+                            ? 'bg-blue-400 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                        }`}
+                      >
+                        {analysisStatus === 'analyzing' ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            分析中...
+                          </>
+                        ) : (
+                          '开始分析'
+                        )}
+                      </button>
+                    </div>
+                    
+                    {analysisStatus === 'analyzing' && (
+                      <div className="mt-4">
+                        <div className="relative pt-1">
+                          <div className="flex mb-1 items-center justify-between">
+                            <div>
+                              <span className="text-xs font-semibold inline-block text-blue-600">
+                                {analysisStage}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-semibold inline-block text-blue-600">
+                                {analysisProgress}%
+                              </span>
+                            </div>
+                          </div>
+                          <div className="overflow-hidden h-2 mb-2 text-xs flex rounded bg-blue-200">
+                            <div style={{ width: `${analysisProgress}%` }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-500"></div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {analysisStatus === 'error' && analysisError && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                        <div className="flex">
+                          <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <p className="ml-3 text-sm text-red-700">{analysisError}</p>
+                        </div>
+                        <div className="mt-3">
+                          <button
+                            onClick={resetAnalysis}
+                            className="text-sm text-red-700 font-medium hover:text-red-800"
+                          >
+                            重试
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {analysisStatus === 'complete' && (
+                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                        <div className="flex">
+                          <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                          <p className="ml-3 text-sm text-green-700">分析完成！</p>
+                        </div>
+                        <div className="mt-3">
+                          <button
+                            onClick={() => setActiveTab('result')}
+                            className="text-sm text-green-700 font-medium hover:text-green-800"
+                          >
+                            查看结果
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
-                  
-                  {analysisStatus === 'analyzing' && (
-                    <div className="mt-6 bg-blue-50 p-4 rounded-md">
-                      <h3 className="text-sm font-medium text-blue-800 mb-2">分析进度</h3>
-                      <div className="w-full h-3 bg-gray-200 rounded-full mb-2">
-                        <div 
-                          className="h-3 bg-blue-600 rounded-full transition-all duration-300 ease-in-out" 
-                          style={{ width: `${analysisProgress}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between text-xs text-blue-800">
-                        <span>{analysisStage}</span>
-                        <span>{analysisProgress}%</span>
-                      </div>
-                      <p className="mt-2 text-xs text-blue-700">
-                        使用模型: {getSelectedModelInfo()?.name}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {analysisStatus === 'error' && analysisError && (
-                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                      <div className="flex">
-                        <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p className="ml-3 text-sm text-red-700">{analysisError}</p>
-                      </div>
-                      <div className="mt-3">
-                        <button
-                          onClick={resetAnalysis}
-                          className="text-sm text-red-700 hover:text-red-900 underline"
-                        >
-                          重试
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="mt-6 flex justify-end">
-                    <button
-                      onClick={startAnalysis}
-                      disabled={analysisStatus === 'analyzing'}
-                      className={`px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                        analysisStatus === 'analyzing' ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      {analysisStatus === 'analyzing' ? (
-                        <span className="flex items-center">
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          分析中...
-                        </span>
-                      ) : '开始分析'}
-                    </button>
+                ) : (
+                  <div className="mb-4">
+                    <FileUploader onFileUpload={handleFileUpload} />
+                    <p className="mt-2 text-xs text-gray-500 text-center">
+                      支持的文件格式：PDF, DOCX, PPTX, XLSX, TXT (最大 10MB)
+                    </p>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ) : (
             renderAnalysisResult()
