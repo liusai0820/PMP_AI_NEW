@@ -79,114 +79,113 @@ const defaultProjectData: CompleteProjectData = {
 
 export default function NewProjectPage() {
   const router = useRouter();
-  const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [step, setStep] = useState<'upload' | 'review' | 'complete'>('upload');
   const [error, setError] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [progressStage, setProgressStage] = useState<string>('准备中');
   
   // 使用defaultProjectData初始化projectData
   const [projectData, setProjectData] = useState<CompleteProjectData>(defaultProjectData);
 
   // 处理文件上传
   const handleFileUpload = async (file: File) => {
-    setFile(file);
     setError(null);
+    setUploadedFile(file);
     await analyzeFile(file);
   };
 
   // 上传并分析文件
   const analyzeFile = async (uploadedFile: File) => {
     try {
-      setIsUploading(true);
-      setError(null);
-      
-      // 读取文件内容
-      const fileContent = await readFileContent(uploadedFile);
-      
-      setIsUploading(false);
       setIsAnalyzing(true);
+      setAnalysisProgress(10);
+      setProgressStage('准备分析文件');
+      setAnalysisError('');
+
+      // 创建FormData对象
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+
+      setAnalysisProgress(20);
+      setProgressStage('文件上传中');
       
-      // 模拟分析进度
-      const progressInterval = setInterval(() => {
-        setAnalysisProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + 10;
-        });
-      }, 500);
-      
-      // 调用API分析文件内容
+      // 发送文件到API进行分析
       const response = await fetch('/api/project-analysis', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileName: uploadedFile.name,
-          fileContent,
-          fileType: uploadedFile.type
-        }),
+        body: formData,
       });
+
+      setAnalysisProgress(40);
+      setProgressStage('文件解析中');
       
-      clearInterval(progressInterval);
+      await new Promise(resolve => setTimeout(resolve, 500));
       
+      setAnalysisProgress(60);
+      setProgressStage('AI分析中');
+
       if (!response.ok) {
-        throw new Error('分析失败，请重试');
+        const errorData = await response.json().catch(() => ({ error: '无法解析错误响应' }));
+        throw new Error(errorData.error || `文件分析失败 (${response.status}: ${response.statusText})`);
       }
+
+      setAnalysisProgress(80);
+      setProgressStage('处理分析结果');
       
       const result = await response.json();
       
-      // 确保result.projectData存在
-      if (!result.projectData) {
-        throw new Error('API返回的数据格式不正确');
-      }
+      setAnalysisProgress(90);
+      setProgressStage('生成项目数据');
 
-      // 更新项目数据
-      setProjectData(result.projectData);
-
-      setAnalysisProgress(100);
-      
-      // 延迟一下，展示100%进度
-      setTimeout(() => {
-        setIsAnalyzing(false);
-        setStep('review');
-      }, 500);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '分析过程中出现错误');
-      setIsUploading(false);
-      setIsAnalyzing(false);
-    }
-  };
-
-  // 读取文件内容
-  const readFileContent = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (event) => {
-        if (event.target && typeof event.target.result === 'string') {
-          resolve(event.target.result);
-        } else {
-          reject(new Error('无法读取文件内容'));
+      if (result.success) {
+        // 检查是否返回了模拟数据
+        if (result.mockData) {
+          const errorReason = result.error || '未知原因';
+          const errorMsg = `注意：返回的是模拟数据，而非实际分析结果。原因：${errorReason}`;
+          setAnalysisError(errorMsg);
+          console.warn(errorMsg);
         }
-      };
-      
-      reader.onerror = () => {
-        reject(new Error('读取文件时出错'));
-      };
-      
-      if (file.type.includes('pdf')) {
-        reader.readAsArrayBuffer(file);
+        
+        // 检查数据是否有效
+        const basicInfo = result.data.basicInfo;
+        let hasValidData = false;
+        
+        // 检查基本信息是否有效
+        for (const key in basicInfo) {
+          if (basicInfo[key as keyof typeof basicInfo] && 
+              basicInfo[key as keyof typeof basicInfo] !== '未提供' && 
+              basicInfo[key as keyof typeof basicInfo] !== '') {
+            hasValidData = true;
+            break;
+          }
+        }
+        
+        if (!hasValidData) {
+          const errorMsg = '警告：AI未能从文档中提取有效信息，请检查文档内容或手动填写信息。';
+          setAnalysisError(errorMsg);
+          console.warn(errorMsg);
+        }
+        
+        // 更新项目数据
+        setProjectData(result.data);
+        setProgressStage('分析完成');
+        setStep('review');
       } else {
-        reader.readAsText(file);
+        throw new Error(result.error || '文件分析失败，请检查文件格式或内容');
       }
-    });
+    } catch (error) {
+      console.error('文件分析出错:', error);
+      setAnalysisError(error instanceof Error ? error.message : '未知错误');
+      setProgressStage('分析失败');
+      // 保持在上传步骤，让用户可以重试
+      setStep('upload');
+    } finally {
+      setIsAnalyzing(false);
+      setAnalysisProgress(100);
+    }
   };
 
   // 保存项目信息
@@ -361,64 +360,6 @@ export default function NewProjectPage() {
       ...prev,
       team: prev.team.filter((_, i) => i !== index)
     }));
-  };
-
-  // 渲染上传步骤
-  const renderUploadStep = () => {
-    return (
-      <div className="space-y-6">
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">上传项目文件</h2>
-          <p className="text-gray-600 mb-6">
-            上传项目合同或相关文档，系统将自动分析并提取关键信息，帮助您快速创建项目。
-          </p>
-          
-          <FileUploader onFileUpload={handleFileUpload} />
-          
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md">
-              {error}
-            </div>
-          )}
-          
-          {(isUploading || isAnalyzing) && (
-            <div className="mt-6 space-y-3">
-              <h3 className="font-medium">
-                {isUploading ? '正在上传文件...' : '正在分析文件...'}
-              </h3>
-              <div className="w-full h-2 bg-gray-200 rounded-full">
-                <div 
-                  className="h-2 bg-blue-600 rounded-full" 
-                  style={{ width: isUploading ? '100%' : `${analysisProgress}%` }}
-                ></div>
-              </div>
-              {isAnalyzing && (
-                <p className="text-sm text-gray-500">
-                  {analysisProgress}% 已完成
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-        
-        <div className="flex justify-between">
-          <Link 
-            href="/dashboard/projects" 
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-          >
-            取消
-          </Link>
-          <button
-            type="button"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!file || isUploading || isAnalyzing}
-            onClick={() => analyzeFile(file!)}
-          >
-            {isUploading || isAnalyzing ? '处理中...' : '分析文件'}
-          </button>
-        </div>
-      </div>
-    );
   };
 
   // 渲染审核步骤
@@ -627,7 +568,7 @@ export default function NewProjectPage() {
             
             {projectData.milestones.length === 0 ? (
               <div className="text-center py-6 text-gray-500">
-                暂无里程碑信息，点击"添加里程碑"按钮添加
+                暂无里程碑信息，点击&quot;添加里程碑&quot;按钮添加
               </div>
             ) : (
               <div className="space-y-6">
@@ -723,7 +664,7 @@ export default function NewProjectPage() {
             
             {projectData.budgets.length === 0 ? (
               <div className="text-center py-6 text-gray-500">
-                暂无预算信息，点击"添加预算项"按钮添加
+                暂无预算信息，点击&quot;添加预算项&quot;按钮添加
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -815,7 +756,7 @@ export default function NewProjectPage() {
             
             {projectData.team.length === 0 ? (
               <div className="text-center py-6 text-gray-500">
-                暂无团队成员信息，点击"添加团队成员"按钮添加
+                暂无团队成员信息，点击&quot;添加团队成员&quot;按钮添加
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -929,7 +870,7 @@ export default function NewProjectPage() {
         </div>
         <h2 className="text-2xl font-bold mb-2">项目创建成功！</h2>
         <p className="text-gray-600 mb-8">
-          您的项目"{projectData.basicInfo.name}"已成功创建，正在跳转到项目看板...
+          您的项目&quot;{projectData.basicInfo.name}&quot;已成功创建，正在跳转到项目看板...
         </p>
         <div className="flex justify-center space-x-4">
           <Link 
@@ -949,41 +890,73 @@ export default function NewProjectPage() {
     );
   };
 
-  return (
-    <div className="max-w-6xl mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">创建新项目</h1>
+  // 渲染上传步骤
+  const renderUploadStep = () => {
+    return (
+      <div className="bg-white shadow-sm rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">上传项目文件</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          上传项目文档，AI将自动提取项目信息。支持PDF、Word和Excel格式。
+        </p>
         
-        <div className="mt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step === 'upload' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
-                1
+        {isAnalyzing ? (
+          <div className="space-y-6">
+            {uploadedFile && (
+              <div className="flex items-center p-4 bg-blue-50 rounded-lg">
+                <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-sm font-medium text-gray-900">{uploadedFile.name}</h3>
+                  <p className="text-xs text-gray-500">{(uploadedFile.size / 1024).toFixed(2)} KB</p>
+                </div>
               </div>
-              <div className={`ml-2 text-sm font-medium ${step === 'upload' ? 'text-blue-600' : 'text-gray-500'}`}>
-                上传文件
+            )}
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span className="font-medium text-gray-700">{progressStage}</span>
+                <span className="text-blue-600">{analysisProgress}%</span>
+              </div>
+              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-600 rounded-full transition-all duration-300 ease-in-out" 
+                  style={{ width: `${analysisProgress}%` }}
+                ></div>
+              </div>
+              <div className="text-xs text-gray-500 italic">
+                {analysisProgress < 30 && "正在上传文件..."}
+                {analysisProgress >= 30 && analysisProgress < 60 && "正在解析文档内容..."}
+                {analysisProgress >= 60 && analysisProgress < 90 && "AI正在分析提取项目信息..."}
+                {analysisProgress >= 90 && "正在整理项目数据..."}
               </div>
             </div>
-            <div className={`flex-1 h-1 mx-4 ${step === 'upload' ? 'bg-gray-200' : 'bg-blue-600'}`}></div>
-            <div className="flex items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step === 'review' ? 'bg-blue-600 text-white' : step === 'complete' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700'}`}>
-                2
+            
+            {analysisError && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+                <div className="flex">
+                  <svg className="h-5 w-5 text-yellow-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>{analysisError}</span>
+                </div>
               </div>
-              <div className={`ml-2 text-sm font-medium ${step === 'review' ? 'text-blue-600' : step === 'complete' ? 'text-gray-700' : 'text-gray-500'}`}>
-                审核信息
-              </div>
-            </div>
-            <div className={`flex-1 h-1 mx-4 ${step === 'complete' ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
-            <div className="flex items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step === 'complete' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
-                3
-              </div>
-              <div className={`ml-2 text-sm font-medium ${step === 'complete' ? 'text-blue-600' : 'text-gray-500'}`}>
-                完成
-              </div>
-            </div>
+            )}
           </div>
-        </div>
+        ) : (
+          <FileUploader onFileUpload={handleFileUpload} />
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">创建新项目</h1>
+        <p className="text-gray-600 mt-2">上传项目文档，AI将自动提取项目信息</p>
       </div>
       
       {step === 'upload' && renderUploadStep()}

@@ -68,20 +68,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileUpload }) => {
         });
       }, 500);
       
-      const response = await fetch('/api/reports', {
-        method: 'POST',
-        body: formData,
-      });
+      // 直接通知父组件处理文件，不在这里上传
+      onFileUpload(file);
       
       clearInterval(progressInterval);
-      
-      if (!response.ok) throw new Error('上传失败');
-      
       setUploadProgress(100);
       setUploadStatus('success');
-      
-      // 通知父组件
-      onFileUpload(file);
       
       // 延迟重置状态，让用户看到成功状态
       setTimeout(() => {
