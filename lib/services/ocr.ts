@@ -1,16 +1,21 @@
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
+import { uploadBase64ToR2 } from './r2Storage';
 
 // 从环境变量获取API密钥
-const MISTRAL_API_KEY = 'bXkslXgU1KbER1anYhwicgw6zFjkqKjM'; // 硬编码API密钥
+const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY || 'bXkslXgU1KbER1anYhwicgw6zFjkqKjM'; // 硬编码API密钥
 // 定义 API URL
 const MISTRAL_API_URL = 'https://api.mistral.ai/v1/ocr';
 // 定义最大文件大小 (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+// 定义 Cloudflare R2 公共 URL
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://pub-0711119e9c2f45d086d1017a74c99863.r2.dev';
 
 console.log('环境变量检查：', {
   MISTRAL_API_KEY_EXISTS: !!MISTRAL_API_KEY,
   MISTRAL_API_KEY_LENGTH: MISTRAL_API_KEY?.length || 0,
-  ENV_KEYS: Object.keys(process.env).filter(key => key.includes('MISTRAL'))
+  ENV_KEYS: Object.keys(process.env).filter(key => key.includes('MISTRAL')),
+  R2_PUBLIC_URL
 });
 
 export interface OCRResponse {
@@ -65,9 +70,9 @@ export class OCRService {
   }
   
   /**
-   * 将 base64 数据上传到临时文件服务并返回公共 URL
+   * 将 base64 数据上传到 Cloudflare R2 并返回公共 URL
    */
-  private async uploadBase64ToTempServer(base64Data: string, fileExtension: string): Promise<string> {
+  private async uploadBase64ToR2(base64Data: string, fileExtension: string): Promise<string> {
     // 确保 base64 数据不包含前缀
     const cleanBase64 = base64Data.startsWith('data:') 
       ? base64Data.split(',')[1] 
@@ -76,24 +81,48 @@ export class OCRService {
     // 检查文件大小
     this.checkFileSize(cleanBase64);
     
+    // 确定内容类型
+    let contentType = 'application/octet-stream';
+    if (fileExtension === 'pdf') {
+      contentType = 'application/pdf';
+    } else if (['jpg', 'jpeg'].includes(fileExtension)) {
+      contentType = 'image/jpeg';
+    } else if (fileExtension === 'png') {
+      contentType = 'image/png';
+    } else if (fileExtension === 'gif') {
+      contentType = 'image/gif';
+    }
+    
     try {
-      // 使用 API 路由上传文件
-      const response = await axios.post('/api/upload', {
-        data: cleanBase64,
-        extension: fileExtension,
-        filename: `ocr-${Date.now()}.${fileExtension}`
-      });
+      // 生成唯一文件名
+      const uniqueFilename = `ocr-${Date.now()}-${uuidv4()}.${fileExtension}`;
       
-      // 返回文件 URL
-      return response.data.url;
+      // 上传到 Cloudflare R2
+      const fileUrl = await uploadBase64ToR2(cleanBase64, `temp/${uniqueFilename}`, contentType);
+      console.log('文件已上传到 Cloudflare R2，URL:', fileUrl);
+      
+      return fileUrl;
     } catch (error) {
-      console.error('上传文件失败:', error);
-      throw new Error('上传文件失败，请稍后重试');
+      console.error('上传到 Cloudflare R2 失败:', error);
+      
+      // 回退到使用 API 路由上传
+      try {
+        const response = await axios.post('/api/upload', {
+          data: cleanBase64,
+          extension: fileExtension,
+          filename: `ocr-${Date.now()}-${uuidv4()}.${fileExtension}`
+        });
+        
+        return response.data.url;
+      } catch (uploadError) {
+        console.error('上传文件失败:', uploadError);
+        throw new Error('上传文件失败，请稍后重试');
+      }
     }
   }
   
   /**
-   * 处理文档 - 将文档上传到临时文件服务并使用 URL 调用 Mistral OCR API
+   * 处理文档 - 将文档上传到 Cloudflare R2 并使用 URL 调用 Mistral OCR API
    */
   async processDocument(documentData: string, options: {
     pages?: number[];
@@ -126,7 +155,7 @@ export class OCRService {
         }
         
         // 上传文档并获取URL
-        documentUrl = await this.uploadBase64ToTempServer(documentData, fileExtension);
+        documentUrl = await this.uploadBase64ToR2(documentData, fileExtension);
         console.log('文档已上传，URL:', documentUrl);
       }
       
@@ -205,7 +234,7 @@ export class OCRService {
   }
   
   /**
-   * 处理图片 - 将图片上传到临时文件服务并使用 URL 调用 Mistral OCR API
+   * 处理图片 - 将图片上传到 Cloudflare R2 并使用 URL 调用 Mistral OCR API
    */
   async processImage(imageData: string, options: {
     includeImageBase64?: boolean;
@@ -235,7 +264,7 @@ export class OCRService {
         }
         
         // 上传图片并获取URL
-        imageUrl = await this.uploadBase64ToTempServer(imageData, fileExtension);
+        imageUrl = await this.uploadBase64ToR2(imageData, fileExtension);
         console.log('图片已上传，URL:', imageUrl);
       }
       

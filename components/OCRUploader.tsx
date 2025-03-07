@@ -15,12 +15,20 @@ export default function OCRUploader() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [processingStep, setProcessingStep] = useState<string>('');
   const [externalUrlWarning, setExternalUrlWarning] = useState<boolean>(false);
+  const [usingCloudflareR2, setUsingCloudflareR2] = useState<boolean>(true);
   
-  // 检查外部URL是否设置
+  // 检查外部URL和Cloudflare R2配置
   useEffect(() => {
     const externalUrl = process.env.NEXT_PUBLIC_EXTERNAL_URL;
-    if (!externalUrl || externalUrl === 'https://your-actual-domain.com') {
+    
+    if (!externalUrl) {
       setExternalUrlWarning(true);
+    }
+    
+    if (externalUrl && externalUrl.includes('r2.dev')) {
+      setUsingCloudflareR2(true);
+    } else {
+      setUsingCloudflareR2(false);
     }
   }, []);
   
@@ -69,11 +77,12 @@ export default function OCRUploader() {
       // 根据文件类型选择处理方法
       const isImage = file.type.startsWith('image/');
       
-      setProcessingStep(isImage ? '正在处理图片...' : '正在处理文档...');
+      setProcessingStep(isImage ? '正在上传图片...' : '正在上传文档...');
       
       console.log(`处理${isImage ? '图片' : '文档'}，类型: ${file.type}, 大小: ${(file.size / 1024).toFixed(2)} KB`);
       
       // 使用API路由处理OCR
+      setProcessingStep(isImage ? '正在处理图片...' : '正在处理文档...');
       const response = await axios.post('/api/ocr', {
         data: base64Data,
         isImage: isImage,
@@ -124,6 +133,17 @@ export default function OCRUploader() {
   
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
+      {usingCloudflareR2 && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-blue-700 font-medium">✅ 使用 Cloudflare R2 存储</p>
+          <p className="mt-2 text-sm text-blue-600">
+            您的文件将上传到 Cloudflare R2 存储桶，并通过公共 URL 提供给 Mistral API 进行处理。
+            <br />
+            URL: {process.env.NEXT_PUBLIC_EXTERNAL_URL || 'https://pub-0711119e9c2f45d086d1017a74c99863.r2.dev'}
+          </p>
+        </div>
+      )}
+      
       {externalUrlWarning && (
         <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-yellow-700 font-medium">⚠️ 外部URL未设置</p>
@@ -135,9 +155,10 @@ export default function OCRUploader() {
           <p className="mt-2 text-sm text-yellow-600">
             您可以使用以下方法之一：
             <ul className="list-disc pl-5 mt-1">
+              <li>使用 Cloudflare R2 存储（已配置）</li>
               <li>使用 ngrok 等工具创建临时的 HTTPS 隧道</li>
               <li>使用您拥有的域名和服务器</li>
-              <li>使用云存储服务（如 AWS S3、Azure Blob Storage、Google Cloud Storage）</li>
+              <li>使用其他云存储服务（如 AWS S3、Azure Blob Storage、Google Cloud Storage）</li>
             </ul>
           </p>
         </div>
