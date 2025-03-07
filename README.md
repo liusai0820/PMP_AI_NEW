@@ -1,53 +1,106 @@
-# PMP AI - 项目管理平台
+# PMP.AI - 智能项目管理平台
 
-PMP AI 是一个现代化的项目管理平台，集成了人工智能功能，旨在提高项目管理效率和决策质量。该平台提供了直观的用户界面和强大的功能，帮助团队更好地规划、执行和监控项目。
+PMP.AI 是一个基于人工智能技术的现代化项目管理平台，旨在提供全方位的项目管理解决方案。
 
-## 🌟 功能特点
+## 🌟 主要功能
 
-- **智能仪表盘**：实时监控项目进度、资源分配和关键指标
-- **AI 助手**：提供智能建议和自动化任务处理
-- **项目管理**：全面的项目创建、跟踪和管理功能
-- **报告分析**：自动生成详细的项目报告和数据分析
-- **知识库**：集中存储和管理项目文档和知识资源
-- **个性化设置**：灵活的系统配置和用户偏好设置
-- **智能文档处理**：支持文档自动标签和向量化搜索
-- **项目分析**：AI 驱动的项目分析和洞察
-- **文件上传**：支持多种格式的文件上传和处理
+### 1. 智能仪表盘
+- 项目健康度实时监控
+- 多维度数据可视化
+- 项目进度追踪
+- 资源利用率分析
+
+### 2. 项目档案管理
+- 智能文档解析
+- 自动信息提取
+- 项目信息结构化存储
+- 多维度搜索功能
+
+### 3. 专家评审智能匹配系统
+- 基于深度学习的专家匹配算法
+- 多维度专家评分体系
+- 跨领域专家推荐
+- 评审任务全流程管理
+- 算法可视化展示
+
+### 4. 知识库管理
+- 项目经验沉淀
+- 最佳实践分享
+- 智能知识推荐
+- 专家经验库
 
 ## 🛠️ 技术栈
 
-- **前端框架**：Next.js 15.2.0 (React 19)
-- **样式解决方案**：Tailwind CSS 4
-- **UI 组件**：Shadcn UI
-- **状态管理**：Zustand
-- **数据获取**：TanStack Query (React Query)
-- **表单处理**：React Hook Form + Zod
-- **图表可视化**：Recharts
-- **认证**：NextAuth.js
+- **前端框架**: Next.js 14, React 18
+- **UI组件**: TailwindCSS, Shadcn/ui
+- **状态管理**: React Hooks
+- **数据可视化**: Recharts
+- **动画效果**: Framer Motion
+- **AI集成**: 
+  - OpenRouter API
+  - BERT模型
+  - 自然语言处理
+  - 深度学习算法
 
-## 📦 安装指南
+## 🚀 快速开始
 
-1. 克隆仓库
+1. 克隆项目
 ```bash
-git clone https://github.com/liusai0820/PMP_AI_NEW.git
+git clone https://github.com/yourusername/PMP_AI_NEW.git
 cd PMP_AI_NEW
 ```
 
 2. 安装依赖
 ```bash
 npm install
-# 或
-yarn install
 ```
 
-3. 启动开发服务器
+3. 配置环境变量
+```bash
+cp .env.example .env.local
+# 编辑 .env.local 文件，填入必要的配置信息
+```
+
+4. 启动开发服务器
 ```bash
 npm run dev
-# 或
-yarn dev
 ```
 
-4. 在浏览器中打开 [http://localhost:3000](http://localhost:3000) 查看应用
+## 📚 最新更新
+
+### 专家评审系统优化 (2024-03-07)
+- 增强专家匹配算法可视化
+- 优化专家评分维度展示
+- 改进算法说明文档
+- 增加跨领域匹配功能
+- 优化用户界面交互体验
+
+## 🔐 环境变量配置
+
+```env
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+OPENROUTER_API_KEY=your_api_key
+```
+
+## 📋 待办事项
+
+- [ ] 集成更多AI模型
+- [ ] 添加项目风险预警系统
+- [ ] 优化专家匹配算法
+- [ ] 增加数据分析报表
+- [ ] 完善项目文档
+
+## 👥 贡献指南
+
+1. Fork 项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
 
 ## 🚀 使用说明
 
@@ -63,14 +116,6 @@ yarn dev
 - 使用 `npm run build` 构建生产版本
 - 使用 `npm run lint` 运行代码检查
 - 使用 `npm run start` 启动生产服务器
-
-## 📄 许可证
-
-[MIT](LICENSE)
-
-## 👥 贡献者
-
-- [刘赛](https://github.com/liusai0820)
 
 ## 📞 联系方式
 
