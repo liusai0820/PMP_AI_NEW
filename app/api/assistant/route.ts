@@ -1,31 +1,85 @@
 import { NextResponse } from 'next/server';
 
-// 模拟智能助手回复
-const generateResponse = (message: string) => {
-  // 简单的关键词匹配逻辑
-  if (message.includes('项目') && message.includes('创建')) {
-    return '创建新项目很简单！点击项目页面右上角的"新建项目"按钮，填写项目信息即可。需要我为您展示具体步骤吗？';
+interface Message {
+  role: 'user' | 'ai' | 'system' | 'assistant';
+  content: string;
+}
+
+// 直接调用大模型API
+async function getAIResponse(message: string, history: Message[] = []) {
+  try {
+    console.log('开始处理用户消息:', message);
+    console.log('历史消息数量:', history.length);
+    
+    // 使用OpenRouter API
+    const apiKey = process.env.OPENROUTER_API_KEY || process.env.MISTRAL_API_KEY || 'bXkslXgU1KbER1anYhwicgw6zFjkqKjM';
+    console.log('使用API密钥:', apiKey ? '已配置' : '未配置');
+    
+    // 转换历史记录格式
+    const formattedHistory = history.map(msg => ({
+      role: msg.role === 'ai' ? 'assistant' : msg.role,
+      content: msg.content
+    }));
+    
+    // 构建请求体
+    const requestBody = {
+      model: 'google/gemini-2.0-flash-001', // 可以替换为其他模型
+      messages: [
+        {
+          role: 'system',
+          content: '你是PMP.AI智能助手，一个专业的项目管理顾问。你可以帮助用户解答项目管理相关问题，提供项目管理建议，或者指导用户使用系统功能。请用中文回答用户的问题，保持专业、简洁和友好的语气。'
+        },
+        ...formattedHistory,
+        {
+          role: 'user',
+          content: message
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1000
+    };
+    
+    console.log('发送请求到OpenRouter API...');
+    console.log('请求模型:', requestBody.model);
+    console.log('消息数量:', requestBody.messages.length);
+    
+    // 发送请求到OpenRouter API
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        'X-Title': 'PMP.AI Project Management Platform'
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    console.log('OpenRouter API响应状态:', response.status);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: '无法解析错误响应' }));
+      console.error('OpenRouter API调用失败:', errorData);
+      throw new Error(`API调用失败: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('OpenRouter API响应成功');
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      console.error('API响应格式不正确:', data);
+      throw new Error('API响应格式不正确，缺少必要字段');
+    }
+    
+    // 返回AI回复
+    const aiResponse = data.choices[0].message.content;
+    console.log('AI回复:', aiResponse.substring(0, 100) + '...');
+    return aiResponse;
+  } catch (error) {
+    console.error('获取AI回复失败:', error);
+    return '抱歉，我暂时无法回答您的问题，请稍后再试。';
   }
-  
-  if (message.includes('延期') || message.includes('风险')) {
-    return '项目延期是常见的风险。建议您：1. 重新评估项目时间线；2. 识别关键路径上的任务；3. 分配更多资源到关键任务；4. 与相关方及时沟通。需要我帮您制定详细的风险应对计划吗？';
-  }
-  
-  if (message.includes('报告') && (message.includes('分析') || message.includes('上传'))) {
-    return '您可以在报告页面上传项目报告文件，系统会自动分析报告内容，提取关键信息，并生成分析结果。支持PDF、Word和Excel格式的文件。';
-  }
-  
-  if (message.includes('统计') || message.includes('数据')) {
-    return '仪表盘页面提供了项目的各项统计数据，包括项目总数、进行中项目、已完成项目等。您还可以查看项目趋势图和项目类型分布图，了解项目的整体情况。';
-  }
-  
-  if (message.includes('团队') || message.includes('成员')) {
-    return '您可以在项目详情页面管理团队成员，添加或移除项目成员，分配任务和角色。系统支持团队协作，成员可以共享文档、交流讨论。';
-  }
-  
-  // 默认回复
-  return '我是PMP.AI智能助手，可以帮您解答项目管理相关问题，提供项目管理建议，或者指导您使用系统功能。请告诉我您需要什么帮助？';
-};
+}
 
 // 模拟建议问题
 const suggestions = [
@@ -38,7 +92,8 @@ const suggestions = [
 
 export async function POST(request: Request) {
   try {
-    const { message } = await request.json();
+    const body = await request.json();
+    const { message, history = [] } = body;
     
     if (!message) {
       return NextResponse.json(
@@ -47,14 +102,12 @@ export async function POST(request: Request) {
       );
     }
     
-    // 模拟处理延迟
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const response = generateResponse(message);
+    // 调用大模型API获取回复
+    const response = await getAIResponse(message, history);
     
     return NextResponse.json({
       success: true,
-      message: response,
+      response: response,
       timestamp: new Date().toISOString(),
       suggestions: suggestions
     });
