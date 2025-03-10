@@ -1,142 +1,280 @@
-# PMP AI 组件文档
+# PMP AI 项目管理平台文档
 
-本文档详细介绍了 PMP AI 项目中各个组件的功能和结构，帮助开发者更好地理解和维护代码。
+PMP AI 是一个基于人工智能的项目管理平台，集成了智能文档分析、项目跟踪、团队协作和自动化报告等功能。本文档详细介绍了项目的架构、组件和功能。
+
+## 技术栈
+
+- **前端框架**：Next.js 14 (App Router)
+- **UI 框架**：Tailwind CSS + Shadcn UI
+- **状态管理**：Zustand
+- **数据获取**：TanStack Query (React Query)
+- **表单处理**：React Hook Form + Zod
+- **AI 集成**：
+  - OCR 文字识别：Mistral AI
+  - 文档解析：Google Gemini
+- **数据库**：Prisma + PostgreSQL
+- **认证**：NextAuth.js
 
 ## 目录结构
-
-项目采用 Next.js 的 App Router 结构，主要目录如下：
 
 ```
 app/                  # 主应用目录
 ├── (auth)/           # 认证相关页面
+│   ├── login/       # 登录页面
+│   └── register/    # 注册页面
 ├── (dashboard)/      # 仪表盘相关页面
+│   ├── dashboard/   # 主仪表盘
+│   ├── projects/    # 项目管理
+│   ├── reports/     # 报告管理
+│   └── settings/    # 系统设置
 ├── api/              # API 路由
-├── dashboard/        # 仪表盘组件
-├── globals.css       # 全局样式
-├── layout.tsx        # 根布局组件
-└── page.tsx          # 首页组件
+│   ├── auth/        # 认证相关 API
+│   ├── projects/    # 项目相关 API
+│   └── reports/     # 报告相关 API
+└── layout.tsx        # 根布局组件
 
 components/           # 可复用组件
-├── assistant/        # AI 助手相关组件
-├── dashboard/        # 仪表盘相关组件
+├── projects/         # 项目相关组件
+│   ├── ProjectCreator.tsx    # 项目创建组件
+│   ├── ProjectList.tsx       # 项目列表组件
+│   └── ProjectDetail.tsx     # 项目详情组件
 ├── reports/          # 报告相关组件
-└── ui/               # UI 基础组件
+├── ui/              # UI 基础组件
+└── assistant/       # AI 助手组件
 
-lib/                  # 工具函数和库
-public/               # 静态资源
-types/                # TypeScript 类型定义
+lib/                 # 工具函数和服务
+├── prisma/         # Prisma 数据库配置
+├── services/       # 业务服务层
+└── utils/          # 工具函数
+
+types/              # TypeScript 类型定义
 ```
 
-## 核心页面组件
+## 核心功能模块
 
-### 首页 (`app/page.tsx`)
+### 1. 项目管理模块
 
-首页组件是用户访问应用时看到的第一个页面，提供了应用的概览和主要功能入口。
+#### ProjectCreator 组件
+- **路径**：`components/projects/ProjectCreator.tsx`
+- **功能**：
+  - 支持文档上传和智能信息提取
+  - 表单化项目创建界面
+  - 支持里程碑、预算和团队成员管理
+- **主要 Props**：
+```typescript
+interface ProjectCreatorProps {
+  onProjectCreate: (projectInfo: ProjectInfo) => Promise<void>;
+  disabled?: boolean;
+}
+```
+- **使用示例**：
+```tsx
+<ProjectCreator 
+  onProjectCreate={handleProjectCreate}
+  disabled={isCreating}
+/>
+```
 
-### 仪表盘页面 (`app/(dashboard)/page.tsx`)
+#### ProjectInfo 接口
+```typescript
+interface ProjectInfo {
+  name: string;
+  projectName: string;
+  projectCode: string;
+  organization: string;
+  client: string;
+  projectManager: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  budget?: number;
+  governmentFunding?: number;
+  selfFunding?: number;
+  milestones: Array<{
+    name: string;
+    date: string;
+    status: string;
+  }>;
+  teamMembers: string[];
+  budgets: Array<{
+    category: string;
+    subCategory: string;
+    amount: number;
+    source: 'support' | 'self';
+    description: string;
+  }>;
+  team: Array<{
+    name: string;
+    title: string;
+    role: string;
+    workload: string;
+    unit: string;
+  }>;
+}
+```
 
-仪表盘页面是用户登录后的主界面，展示项目概览、任务进度、团队活动等关键信息。
+### 2. 文档处理模块
 
-### 设置页面 (`app/(dashboard)/settings/page.tsx`)
+#### DocumentProcessor 服务
+- **路径**：`lib/services/documentProcessor.ts`
+- **功能**：
+  - 支持 DOCX、PDF 文件解析
+  - OCR 文字识别（基于 Mistral AI）
+  - 智能信息提取（基于 Google Gemini）
+  - 数据结构化和验证
 
-设置页面允许用户配置个人信息、通知设置和系统主题等偏好。主要功能包括：
+#### 文档分析流程
+1. 文件上传和类型验证
+2. OCR 文字识别（对于扫描件和图片）
+3. 文本内容提取
+4. Gemini 模型解析和结构化
+5. 数据验证和清理
+6. 结果返回
 
-- 个人信息管理：修改用户名和邮箱
-- 通知设置：配置邮件通知、项目更新提醒和报告分析完成通知
-- 系统主题选择：默认主题、暗色主题和高对比度主题
+### 3. AI 助手模块
 
-## 功能组件
+#### AssistantChat 组件
+- **路径**：`components/assistant/AssistantChat.tsx`
+- **功能**：
+  - 实时项目咨询
+  - 智能建议生成
+  - 自动化任务执行
 
-### 仪表盘组件 (`components/dashboard/`)
+### 4. 数据库模型
 
-仪表盘相关组件包括：
+#### Project 模型
+```prisma
+model Project {
+  id              String      @id @default(cuid())
+  name            String
+  code            String?
+  organization    String?
+  client          String?
+  manager         String?
+  startDate       DateTime?
+  endDate         DateTime?
+  description     String?
+  budget          Float?
+  progress        Float       @default(0)
+  status          String      @default("active")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  milestones      Milestone[]
+  team            TeamMember[]
+  budgets         Budget[]
+}
+```
 
-- **DashboardHeader**：显示仪表盘标题和操作按钮
-- **ProjectSummary**：展示项目概览和关键指标
-- **TaskList**：显示待办任务和进行中的任务
-- **ActivityFeed**：展示团队最近活动
-- **PerformanceChart**：项目性能和进度图表
+## API 路由
 
-### AI 助手组件 (`components/assistant/`)
+### 项目相关 API
 
-AI 助手相关组件包括：
+#### 创建项目
+- **路径**：`POST /api/projects`
+- **功能**：创建新项目
+- **请求体**：`ProjectInfo` 类型
+- **响应**：创建的项目信息
 
-- **AssistantChat**：AI 助手聊天界面
-- **SuggestionPanel**：智能建议面板
-- **AutomationTools**：自动化工具集合
-
-### 报告组件 (`components/reports/`)
-
-报告相关组件包括：
-
-- **ReportGenerator**：报告生成工具
-- **DataVisualization**：数据可视化组件
-- **AnalyticsDashboard**：分析仪表盘
-
-### UI 基础组件 (`components/ui/`)
-
-基础 UI 组件采用 Shadcn UI 库，包括：
-
-- **Button**：按钮组件
-- **Input**：输入框组件
-- **Checkbox**：复选框组件
-- **Select**：下拉选择组件
-- **Modal**：模态框组件
-- **Card**：卡片组件
-- **Table**：表格组件
-
-## 状态管理
-
-项目使用 Zustand 进行状态管理，主要包括以下几个 store：
-
-- **userStore**：管理用户信息和认证状态
-- **projectStore**：管理项目数据和操作
-- **uiStore**：管理 UI 状态（如主题、侧边栏状态等）
-- **notificationStore**：管理通知和提醒
-
-## 数据获取
-
-项目使用 TanStack Query (React Query) 进行数据获取和缓存，主要查询包括：
-
-- **useProjects**：获取项目列表
-- **useProjectDetails**：获取项目详情
-- **useReports**：获取报告列表
-- **useUserProfile**：获取用户资料
-
-## 表单处理
-
-项目使用 React Hook Form 和 Zod 进行表单处理和验证，主要表单包括：
-
-- **LoginForm**：登录表单
-- **ProjectForm**：项目创建和编辑表单
-- **SettingsForm**：用户设置表单
-- **ReportForm**：报告生成表单
-
-## 路由结构
-
-项目使用 Next.js App Router，主要路由包括：
-
-- **/**：首页
-- **/dashboard**：仪表盘
-- **/projects**：项目列表
-- **/projects/[id]**：项目详情
-- **/assistant**：AI 助手
-- **/reports**：报告列表
-- **/reports/[id]**：报告详情
-- **/knowledge**：知识库
-- **/settings**：设置页面
-- **/auth/login**：登录页面
-- **/auth/register**：注册页面
+#### 获取项目详情
+- **路径**：`GET /api/projects/[id]`
+- **功能**：获取项目详细信息
+- **响应**：项目完整信息
 
 ## 最佳实践
 
-在开发和维护本项目时，请遵循以下最佳实践：
+### 1. 组件开发规范
 
-1. **组件设计**：遵循单一职责原则，每个组件只负责一个功能
-2. **状态管理**：合理使用 Zustand store，避免状态冗余
-3. **性能优化**：使用 React.memo、useMemo 和 useCallback 优化性能
-4. **类型安全**：确保所有组件和函数都有正确的 TypeScript 类型定义
-5. **错误处理**：妥善处理异常情况，提供友好的错误提示
-6. **响应式设计**：确保应用在不同设备上都有良好的显示效果
-7. **代码风格**：遵循项目的代码风格和命名约定
-8. **测试**：为关键组件和功能编写单元测试和集成测试 
+- 使用 TypeScript 类型定义
+- 组件文件命名采用 PascalCase
+- 工具函数文件命名采用 camelCase
+- 每个组件都应该有对应的文档注释
+
+### 2. 状态管理
+
+- 使用 Zustand 进行全局状态管理
+- 组件内部状态使用 useState
+- 复杂表单状态使用 React Hook Form
+
+### 3. 错误处理
+
+- 使用 try-catch 包装异步操作
+- 统一的错误提示组件
+- 详细的错误日志记录
+
+### 4. 性能优化
+
+- 使用 React.memo 优化组件重渲染
+- 使用 useMemo 和 useCallback 优化性能
+- 图片懒加载和组件动态导入
+
+### 5. 安全性
+
+- 输入数据验证和清理
+- API 请求认证和授权
+- 敏感信息加密存储
+
+## 开发流程
+
+1. **功能开发**
+   - 创建功能分支
+   - 编写代码和测试
+   - 提交 PR 和代码审查
+
+2. **测试**
+   - 单元测试
+   - 集成测试
+   - E2E 测试
+
+3. **部署**
+   - 开发环境部署
+   - 测试环境部署
+   - 生产环境部署
+
+## 环境变量配置
+
+```env
+# 数据库
+DATABASE_URL="postgresql://..."
+
+# AI API Keys
+OPENAI_API_KEY="..."
+GOOGLE_API_KEY="..."
+
+# 认证
+NEXTAUTH_SECRET="..."
+NEXTAUTH_URL="..."
+
+# 其他配置
+NODE_ENV="development"
+```
+
+## 常见问题解决
+
+1. **项目创建失败**
+   - 检查表单数据完整性
+   - 验证文件上传状态
+   - 查看服务器错误日志
+
+2. **文档解析错误**
+   - 确认文件格式支持
+   - 检查文件内容完整性
+   - 验证 AI 服务状态
+
+3. **性能问题**
+   - 检查组件重渲染
+   - 优化数据获取策略
+   - 分析网络请求
+
+## 更新日志
+
+### v1.0.0 (2024-03)
+- 初始版本发布
+- 基础项目管理功能
+- 集成 Mistral AI 实现 OCR 功能
+- 集成 Google Gemini 实现智能文档解析
+
+### v1.1.0 (计划中)
+- 团队协作功能增强
+- 报告生成功能优化
+- OCR 识别准确率提升
+- 性能优化 

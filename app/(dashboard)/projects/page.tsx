@@ -1,34 +1,118 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { projectList } from '@/lib/mockData';
+import Link from 'next/link';
 
 interface Project {
   id: string;
   name: string;
-  department: string;
+  organization?: string; // 项目单位
   progress: number;
-  documents: number;
+  startDate?: string | Date;
+  endDate?: string | Date;
+  projectManager?: string;
+  client?: string;
+  description?: string;
+  batch?: string;
+  industry?: string;
+  progressStatus?: string;
+  managementStatus?: string;
+}
+
+interface ApiProject {
+  id: string;
+  name?: string;
+  organization?: string;
+  progress?: number;
+  startDate?: string | Date;
+  endDate?: string | Date;
+  projectManager?: string;
+  client?: string;
+  description?: string;
+  batch?: string;
+  industry?: string;
+  progressStatus?: string;
+  managementStatus?: string;
 }
 
 export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<keyof Project>('id');
+  const [sortField, setSortField] = useState<keyof Project>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [projects, setProjects] = useState<Project[]>([]);
+  
+  // 获取项目数据
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        // 从API获取项目数据
+        const response = await fetch('/api/projects');
+        
+        if (!response.ok) {
+          throw new Error('获取项目列表失败');
+        }
+        
+        const data = await response.json();
+        console.log('获取到的项目数据:', data);
+        
+        // 如果API返回的数据为空，使用模拟数据
+        if (!data || data.length === 0) {
+          console.log('API返回的数据为空，使用模拟数据');
+          setProjects(projectList);
+        } else {
+          // 确保数据格式正确
+          const formattedProjects = data.map((project: ApiProject) => ({
+            id: project.id,
+            name: project.name || '未命名项目',
+            organization: project.organization || '未设置',
+            progress: project.progress || 0,
+            startDate: project.startDate,
+            endDate: project.endDate,
+            projectManager: project.projectManager,
+            client: project.client,
+            description: project.description,
+            batch: project.batch,
+            industry: project.industry,
+            progressStatus: project.progressStatus,
+            managementStatus: project.managementStatus
+          }));
+          setProjects(formattedProjects);
+        }
+      } catch (err) {
+        console.error('获取项目列表失败:', err);
+        
+        // 如果API调用失败，使用模拟数据
+        setProjects(projectList);
+      }
+    };
+    
+    fetchProjects();
+  }, []);
+  
+  // 格式化日期
+  const formatDate = (dateString?: string | Date) => {
+    if (!dateString) return '未设置';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-CN');
+  };
   
   // 过滤项目
   const filteredProjects = searchTerm
-    ? projectList.filter(project => 
+    ? projects.filter(project => 
         project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.department.toLowerCase().includes(searchTerm.toLowerCase())
+        (project.organization && project.organization.toLowerCase().includes(searchTerm.toLowerCase()))
       )
-    : projectList;
+    : projects;
   
   // 排序项目
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     const fieldA = a[sortField];
     const fieldB = b[sortField];
+    
+    if (fieldA === undefined && fieldB === undefined) return 0;
+    if (fieldA === undefined) return sortDirection === 'asc' ? 1 : -1;
+    if (fieldB === undefined) return sortDirection === 'asc' ? -1 : 1;
     
     if (fieldA < fieldB) return sortDirection === 'asc' ? -1 : 1;
     if (fieldA > fieldB) return sortDirection === 'asc' ? 1 : -1;
@@ -68,9 +152,9 @@ export default function ProjectsPage() {
             <h1 className="text-2xl font-bold text-gray-900">项目档案</h1>
             <p className="mt-2 text-gray-600">管理和查看所有项目信息</p>
           </div>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+          <Link href="/projects/create" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
             新建项目
-          </button>
+          </Link>
         </div>
       </header>
       
@@ -108,15 +192,8 @@ export default function ProjectsPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('id')}
-                >
-                  <div className="flex items-center">
-                    项目编号
-                    {getSortIcon('id')}
-                  </div>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  序号
                 </th>
                 <th 
                   scope="col" 
@@ -131,11 +208,11 @@ export default function ProjectsPage() {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('department')}
+                  onClick={() => handleSort('organization')}
                 >
                   <div className="flex items-center">
-                    所属部门
-                    {getSortIcon('department')}
+                    项目单位
+                    {getSortIcon('organization')}
                   </div>
                 </th>
                 <th 
@@ -148,15 +225,8 @@ export default function ProjectsPage() {
                     {getSortIcon('progress')}
                   </div>
                 </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('documents')}
-                >
-                  <div className="flex items-center">
-                    文档数
-                    {getSortIcon('documents')}
-                  </div>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  项目起止时间
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
@@ -164,16 +234,20 @@ export default function ProjectsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {sortedProjects.map((project) => (
-                <tr key={project.id} className="hover:bg-gray-50">
+              {sortedProjects.map((project, index) => (
+                <tr 
+                  key={project.id} 
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => window.location.href = `/projects/${project.id}`}
+                >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {project.id}
+                    {index + 1}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {project.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {project.department}
+                    {project.organization || '未设置'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -193,11 +267,11 @@ export default function ProjectsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {project.documents}
+                    {formatDate(project.startDate)} 至 {formatDate(project.endDate)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">查看</button>
-                    <button className="text-gray-600 hover:text-gray-900">编辑</button>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+                    <Link href={`/projects/${project.id}`} className="text-blue-600 hover:text-blue-900 mr-3">查看</Link>
+                    <Link href={`/projects/${project.id}/edit`} className="text-gray-600 hover:text-gray-900">编辑</Link>
                   </td>
                 </tr>
               ))}
@@ -210,47 +284,18 @@ export default function ProjectsPage() {
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">未找到项目</h3>
-            <p className="mt-1 text-sm text-gray-500">尝试使用其他搜索条件或创建新项目。</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">没有找到项目</h3>
+            <p className="mt-1 text-sm text-gray-500">请尝试调整搜索条件或创建新项目。</p>
+            <div className="mt-6">
+              <Link href="/projects/create" className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg className="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                创建新项目
+              </Link>
+            </div>
           </div>
         )}
-        
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-              上一页
-            </button>
-            <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-              下一页
-            </button>
-          </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                显示 <span className="font-medium">1</span> 到 <span className="font-medium">{sortedProjects.length}</span> 条，共 <span className="font-medium">{sortedProjects.length}</span> 条结果
-              </p>
-            </div>
-            <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                  <span className="sr-only">上一页</span>
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </button>
-                <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                  1
-                </button>
-                <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                  <span className="sr-only">下一页</span>
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

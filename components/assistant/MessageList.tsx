@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
+import { Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface Message {
   id: number;
@@ -14,60 +16,84 @@ interface MessageListProps {
   loading: boolean;
 }
 
-const MessageList: React.FC<MessageListProps> = ({ messages, loading }) => {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-  
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-  
-  return (
-    <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-      <div className="max-w-3xl mx-auto space-y-4">
-        {messages.map(message => (
-          <div
-            key={message.id}
-            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+export default function MessageList({ messages, loading }: MessageListProps) {
+  if (messages.length === 0 && !loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-8">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-8 h-8 text-primary"
           >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium">开始与智能助手对话</h3>
+        <p className="text-sm text-muted-foreground mt-2 max-w-md">
+          您可以询问项目管理相关问题，获取建议和帮助。选择一个项目以获取更具针对性的回答。
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {messages.map((message) => (
+        <div
+          key={message.id}
+          className={`flex ${
+            message.sender === 'user' ? 'justify-end' : 'justify-start'
+          }`}
+        >
+          <div className="flex items-start max-w-[80%] group">
+            {message.sender === 'ai' && (
+              <Avatar className="h-8 w-8 mr-2">
+                <AvatarImage src="/bot-avatar.png" alt="AI" />
+                <AvatarFallback className="bg-primary/10 text-primary">AI</AvatarFallback>
+              </Avatar>
+            )}
+            
             <div
-              className={`max-w-xl px-4 py-3 rounded-lg ${
+              className={`rounded-lg px-4 py-2 ${
                 message.sender === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-gray-200'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted'
               }`}
             >
-              <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-              <div
-                className={`text-xs mt-1 text-right ${
-                  message.sender === 'user' ? 'text-blue-200' : 'text-gray-500'
-                }`}
-              >
-                {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              <div className="whitespace-pre-wrap">{message.content}</div>
+              <div className="text-xs mt-1 opacity-70">
+                {new Date(message.timestamp).toLocaleTimeString()}
               </div>
             </div>
+            
+            {message.sender === 'user' && (
+              <Avatar className="h-8 w-8 ml-2">
+                <AvatarImage src="/user-avatar.png" alt="User" />
+                <AvatarFallback className="bg-primary/10">U</AvatarFallback>
+              </Avatar>
+            )}
           </div>
-        ))}
-        
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-white border border-gray-200 px-4 py-3 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              </div>
+        </div>
+      ))}
+      
+      {loading && (
+        <div className="flex justify-start">
+          <div className="flex items-start max-w-[80%]">
+            <Avatar className="h-8 w-8 mr-2">
+              <AvatarFallback className="bg-primary/10 text-primary">AI</AvatarFallback>
+            </Avatar>
+            <div className="rounded-lg px-4 py-2 bg-muted">
+              <Loader2 className="h-4 w-4 animate-spin" />
             </div>
           </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default MessageList; 
+} 

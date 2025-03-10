@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ResponsiveContainer, 
   ScatterChart, 
@@ -9,11 +9,12 @@ import {
   YAxis, 
   ZAxis,
   CartesianGrid, 
-  Tooltip, 
+  Tooltip,
+  PieChart,
+  Pie,
   Cell,
-  Legend
+  Sector
 } from 'recharts';
-import { PieChart, Pie, Sector } from 'recharts';
 
 interface RiskItem {
   id: string;
@@ -24,9 +25,59 @@ interface RiskItem {
   category: string;  // 风险类别
 }
 
+interface ProjectData {
+  id: string;
+  name: string;
+  progress: number;
+  status: string;
+  startDate: string;
+  endDate: string;
+  milestones: Array<{
+    name: string;
+    date: string;
+    status: string;
+  }>;
+  risks: Array<{
+    type: string;
+    level: string;
+    description: string;
+  }>;
+}
+
+interface ChartData {
+  name: string;
+  value: number;
+}
+
 interface ProjectMonitorProps {
   healthScore: number;  // 项目健康度分数 (0-100)
   riskMatrix: RiskItem[];  // 风险矩阵数据
+}
+
+interface PieActiveShapeProps {
+  cx: number;
+  cy: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+  payload: {
+    name: string;
+    value: number;
+  };
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: {
+      name: string;
+      category: string;
+      impact: number;
+      probability: number;
+    };
+  }>;
 }
 
 // 健康度仪表盘的活动形状渲染
@@ -75,7 +126,7 @@ const getRiskColor = (impact: number, probability: number) => {
 };
 
 // 风险矩阵自定义提示框
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload }: TooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -192,7 +243,6 @@ const ProjectMonitor: React.FC<ProjectMonitorProps> = ({ healthScore, riskMatrix
                 range={[50, 400]} 
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend />
               <Scatter name="风险点" data={riskMatrix}>
                 {riskMatrix.map((entry, index) => (
                   <Cell 

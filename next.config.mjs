@@ -6,6 +6,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'via.placeholder.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'pub-0711119e9c2f45d086d1017a74c99863.r2.dev',
+      },
     ],
   },
   webpack: (config) => {
@@ -15,13 +19,42 @@ const nextConfig = {
       path: false,
       crypto: false,
     };
+    
+    // 添加CSV文件的加载器
+    config.module.rules.push({
+      test: /\.csv$/,
+      loader: 'csv-loader',
+      options: {
+        dynamicTyping: true,
+        header: true,
+        skipEmptyLines: true
+      }
+    });
+    
     return config;
   },
   experimental: {
-    serverComponentsExternalPackages: ['sharp'],
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
+    turbo: {
+      loaders: {
+        '.csv': ['csv-loader']
+      }
+    }
   },
+  serverExternalPackages: ['sharp'],
   env: {
     MISTRAL_API_KEY: 'bXkslXgU1KbER1anYhwicgw6zFjkqKjM',
+  },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/dashboard',
+        permanent: true,
+      },
+    ];
   },
   async rewrites() {
     return [

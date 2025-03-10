@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { OCRResponse } from '@/lib/services/ocr';
 import axios from 'axios';
+import Image from 'next/image';
 
 // 最大文件大小 (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -80,6 +81,29 @@ export default function OCRUploader() {
       setProcessingStep(isImage ? '正在上传图片...' : '正在上传文档...');
       
       console.log(`处理${isImage ? '图片' : '文档'}，类型: ${file.type}, 大小: ${(file.size / 1024).toFixed(2)} KB`);
+      
+      // 确定内容类型
+      let contentType = 'application/octet-stream';
+      if (file.type) {
+        contentType = file.type;
+      } else if (isImage) {
+        contentType = 'image/png';
+      } else {
+        contentType = 'application/pdf';
+      }
+      
+      // 生成唯一文件名
+      const filename = `ocr-${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${isImage ? 'png' : 'pdf'}`;
+      
+      // 使用API路由上传文件
+      const uploadResponse = await axios.post('/api/r2-upload', {
+        data: base64Data,
+        contentType: contentType,
+        key: `temp/${filename}`
+      });
+      
+      const fileUrl = uploadResponse.data.url;
+      console.log('文件已上传，URL:', fileUrl);
       
       // 使用API路由处理OCR
       setProcessingStep(isImage ? '正在处理图片...' : '正在处理文档...');
@@ -253,10 +277,13 @@ export default function OCRUploader() {
                     {page.images.map((image) => (
                       <div key={image.id} className="border rounded p-2">
                         {image.image_base64 && (
-                          <img 
+                          <Image 
                             src={`data:image/png;base64,${image.image_base64}`}
                             alt={`提取的图片 ${image.id}`}
+                            width={300}
+                            height={200}
                             className="max-w-full h-auto"
+                            style={{ objectFit: 'contain' }}
                           />
                         )}
                         <div className="mt-1 text-xs text-gray-500">

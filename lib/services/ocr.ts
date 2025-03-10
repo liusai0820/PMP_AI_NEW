@@ -11,7 +11,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 // 定义 Cloudflare R2 公共 URL
 const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://pub-0711119e9c2f45d086d1017a74c99863.r2.dev';
 
-console.log('环境变量检查：', {
+console.log('OCR服务环境变量检查：', {
   MISTRAL_API_KEY_EXISTS: !!MISTRAL_API_KEY,
   MISTRAL_API_KEY_LENGTH: MISTRAL_API_KEY?.length || 0,
   ENV_KEYS: Object.keys(process.env).filter(key => key.includes('MISTRAL')),
@@ -107,12 +107,14 @@ export class OCRService {
       
       // 回退到使用 API 路由上传
       try {
+        console.log('尝试使用API路由上传文件...');
         const response = await axios.post('/api/upload', {
           data: cleanBase64,
           extension: fileExtension,
           filename: `ocr-${Date.now()}-${uuidv4()}.${fileExtension}`
         });
         
+        console.log('文件已通过API路由上传，URL:', response.data.url);
         return response.data.url;
       } catch (uploadError) {
         console.error('上传文件失败:', uploadError);
@@ -137,7 +139,10 @@ export class OCRService {
       }
       
       // 记录选项
-      console.log('处理文档选项:', options);
+      console.log('处理文档选项:', {
+        ...options,
+        documentUrl: options.documentUrl ? '(已提供)' : undefined
+      });
       
       // 获取文档URL
       let documentUrl = options.documentUrl;
@@ -204,6 +209,7 @@ export class OCRService {
       }, null, 2));
       
       // 调用 Mistral OCR API
+      console.log('正在调用 Mistral OCR API...');
       const response = await axios.post(
         MISTRAL_API_URL,
         requestBody,
@@ -218,13 +224,29 @@ export class OCRService {
         }
       );
       
+      console.log('Mistral OCR API 响应状态:', response.status);
+      console.log('OCR处理完成，页数:', response.data.usage_info?.pages_processed || '未知');
+      
       return response.data;
     } catch (error) {
       console.error('OCR处理失败:', error);
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(`OCR处理失败: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-      } else if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
-        throw new Error('OCR处理超时，请尝试使用较小的文件或仅处理部分页面');
+      
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          console.error('API响应错误:', {
+            status: error.response.status,
+            data: error.response.data
+          });
+          throw new Error(`OCR处理失败: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        } else if (error.code === 'ECONNABORTED') {
+          throw new Error('OCR处理超时，请尝试使用较小的文件或仅处理部分页面');
+        } else if (error.request) {
+          console.error('未收到响应:', error.request);
+          throw new Error('OCR处理失败: 未收到API响应');
+        } else {
+          console.error('请求配置错误:', error.message);
+          throw new Error(`OCR处理失败: 请求配置错误 - ${error.message}`);
+        }
       } else if (error instanceof Error) {
         throw error;
       } else {
@@ -248,7 +270,10 @@ export class OCRService {
       }
       
       // 记录选项
-      console.log('处理图片选项:', options);
+      console.log('处理图片选项:', {
+        ...options,
+        imageUrl: options.imageUrl ? '(已提供)' : undefined
+      });
       
       // 获取图片URL
       let imageUrl = options.imageUrl;
@@ -308,6 +333,7 @@ export class OCRService {
       }, null, 2));
       
       // 调用 Mistral OCR API
+      console.log('正在调用 Mistral OCR API...');
       const response = await axios.post(
         MISTRAL_API_URL,
         requestBody,
@@ -322,13 +348,29 @@ export class OCRService {
         }
       );
       
+      console.log('Mistral OCR API 响应状态:', response.status);
+      console.log('OCR处理完成，页数:', response.data.usage_info?.pages_processed || '未知');
+      
       return response.data;
     } catch (error) {
       console.error('OCR处理失败:', error);
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(`OCR处理失败: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-      } else if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
-        throw new Error('OCR处理超时，请尝试使用较小的图片');
+      
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          console.error('API响应错误:', {
+            status: error.response.status,
+            data: error.response.data
+          });
+          throw new Error(`OCR处理失败: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        } else if (error.code === 'ECONNABORTED') {
+          throw new Error('OCR处理超时，请尝试使用较小的图片');
+        } else if (error.request) {
+          console.error('未收到响应:', error.request);
+          throw new Error('OCR处理失败: 未收到API响应');
+        } else {
+          console.error('请求配置错误:', error.message);
+          throw new Error(`OCR处理失败: 请求配置错误 - ${error.message}`);
+        }
       } else if (error instanceof Error) {
         throw error;
       } else {

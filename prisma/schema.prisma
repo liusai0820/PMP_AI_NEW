@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 项目模型
+model Project {
+  id                String    @id @default(uuid())
+  name              String
+  batch             String?
+  client            String?
+  organization      String?
+  industry          String?
+  startDate         DateTime?
+  endDate           DateTime?
+  description       String?   @db.Text
+  background        String?   @db.Text
+  projectManager    String?
+  projectLeader     String?
+  governmentFunding Float?
+  selfFunding       Float?
+  location          String?
+  progress          Float     @default(0)
+  progressStatus    String?
+  managementStatus  String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // 关联
+  milestones        Milestone[]
+  documents         Document[]
+  activities        Activity[]
+}
+
+// 里程碑模型
+model Milestone {
+  id                   String    @id @default(uuid())
+  name                 String
+  startDate            DateTime?
+  endDate              DateTime?
+  evaluationDate       DateTime?
+  actualEvaluationDate DateTime?
+  status               String?
+  description          String?   @db.Text
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  
+  // 关联
+  projectId            String
+  project              Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// 文档模型
+model Document {
+  id          String   @id
+  name        String
+  type        String
+  content     String   @db.Text
+  metadata    Json?
+  projectId   String?
+  vectorized  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联到项目（如果有）
+  project     Project? @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+}
+
+// 活动记录模型
+model Activity {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  type        String
+  priority    String?
+  timestamp   DateTime @default(now())
+  
+  // 关联
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}

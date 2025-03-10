@@ -1,148 +1,66 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { projectService } from '@/lib/services/projectService';
 
-// 项目基本信息接口
-interface ProjectInfo {
-  name: string;                 // 项目名称
-  code: string;                 // 项目编号/合同编号
-  mainDepartment: string;       // 项目主管部门（甲方）
-  executeDepartment: string;    // 项目承担单位（乙方）
-  manager: string;              // 项目核心负责人
-  startDate: string;           // 开始日期
-  endDate: string;             // 结束日期
-  totalBudget: string;         // 总预算
-  supportBudget: string;       // 资助金额
-  selfBudget: string;          // 自筹金额
-  description: string;         // 项目描述
-  type: string;                // 项目类型
-}
-
-// 项目里程碑接口
-interface ProjectMilestone {
-  phase: string;               // 阶段（第一阶段/第二阶段/第三阶段）
-  startDate: string;          // 阶段开始时间
-  endDate: string;            // 阶段结束时间
-  mainTasks: string[];        // 主要研究内容
-  deliverables: string[];     // 考核指标/交付物
-}
-
-// 项目预算接口
-interface ProjectBudget {
-  category: string;           // 预算类别
-  subCategory: string;        // 子类别
-  amount: number;            // 金额
-  source: 'support' | 'self'; // 资金来源（资助/自筹）
-  description: string;       // 说明
-}
-
-// 项目团队成员接口
-interface TeamMember {
-  name: string;              // 姓名
-  title: string;             // 职称
-  role: string;              // 项目角色
-  workload: string;          // 工作量（月/年）
-  unit: string;              // 所属单位
-}
-
-// 完整的项目数据接口
-interface CompleteProjectData {
-  basicInfo: ProjectInfo;
-  milestones: ProjectMilestone[];
-  budgets: ProjectBudget[];
-  team: TeamMember[];
-  id?: string; // 添加可选的id字段
-}
-
-// 模拟数据库存储
-const projects: CompleteProjectData[] = [];
-
-export async function POST(request: Request) {
+// 获取所有项目
+export async function GET() {
   try {
-    // 解析请求体
-    const projectData: CompleteProjectData = await request.json();
-    
-    // 验证必填字段
-    if (!projectData.basicInfo || !projectData.basicInfo.name || !projectData.basicInfo.code) {
-      return NextResponse.json(
-        { error: '项目名称和编号为必填项' },
-        { status: 400 }
-      );
-    }
-    
-    // 检查项目编号是否已存在
-    const existingProject = projects.find(p => p.basicInfo.code === projectData.basicInfo.code);
-    if (existingProject) {
-      return NextResponse.json(
-        { error: '项目编号已存在' },
-        { status: 409 }
-      );
-    }
-    
-    // 生成项目ID
-    const projectId = Date.now().toString();
-    
-    // 保存项目信息（模拟数据库操作）
-    const projectWithId = {
-      ...projectData,
-      id: projectId
-    };
-    
-    projects.push(projectWithId);
-    
-    // 返回成功响应
-    return NextResponse.json({ 
-      success: true,
-      message: '项目创建成功',
-      projectId: projectId,
-      project: projectWithId
-    });
-    
+    const projects = await projectService.getAllProjects();
+    return NextResponse.json(projects);
   } catch (error) {
-    console.error('处理请求时出错:', error);
+    console.error('获取项目列表失败:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : '服务器内部错误' },
+      { error: '获取项目列表失败' },
       { status: 500 }
     );
   }
 }
 
-export async function GET(request: Request) {
+// 创建新项目
+export async function POST(request: NextRequest) {
   try {
-    // 获取URL参数
-    const { searchParams } = new URL(request.url);
-    const code = searchParams.get('code');
-    const id = searchParams.get('id');
-    
-    // 如果指定了项目ID，返回特定项目
-    if (id) {
-      const project = projects.find(p => p.id === id);
-      if (!project) {
+    const data = await request.json();
+    console.log('收到创建项目请求，数据:', JSON.stringify(data, null, 2));
+
+    // 验证必要字段
+    if (!data.name && !data.projectName) {
+      console.error('项目名称未提供');
+      return NextResponse.json(
+        { error: '项目名称不能为空' },
+        { status: 400 }
+      );
+    }
+
+    // 验证其他必要字段
+    const requiredFields = {
+      organization: '承担单位',
+      projectManager: '项目负责人',
+      startDate: '开始日期',
+      endDate: '结束日期'
+    };
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!data[field] || data[field] === '未提供' || data[field] === '未设置') {
+        console.error(`${label}未提供或无效:`, data[field]);
         return NextResponse.json(
-          { error: '项目不存在' },
-          { status: 404 }
+          { error: `${label}不能为空或无效` },
+          { status: 400 }
         );
       }
-      return NextResponse.json(project);
     }
-    
-    // 如果指定了项目编号，返回特定项目
-    if (code) {
-      const project = projects.find(p => p.basicInfo.code === code);
-      if (!project) {
-        return NextResponse.json(
-          { error: '项目不存在' },
-          { status: 404 }
-        );
-      }
-      return NextResponse.json(project);
-    }
-    
-    // 否则返回所有项目
-    return NextResponse.json(projects);
-    
+
+    // 创建项目
+    console.log('开始创建项目...');
+    const project = await projectService.createProject(data);
+    console.log('项目创建成功:', JSON.stringify(project, null, 2));
+
+    return NextResponse.json(project, { status: 201 });
   } catch (error) {
-    console.error('处理请求时出错:', error);
+    console.error('创建项目失败:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : '服务器内部错误' },
+      { 
+        error: '创建项目失败',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }

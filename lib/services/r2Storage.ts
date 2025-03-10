@@ -1,3 +1,5 @@
+'use server';
+
 import { S3Client, DeleteObjectCommand, ObjectCannedACL, PutObjectCommandInput } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 
@@ -9,19 +11,26 @@ const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'default-bucket';
 const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://pub-0711119e9c2f45d086d1017a74c99863.r2.dev';
 
 // 检查配置
-if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
+const isR2Configured = !!R2_ACCOUNT_ID && !!R2_ACCESS_KEY_ID && !!R2_SECRET_ACCESS_KEY;
+
+if (!isR2Configured) {
   console.warn('警告: Cloudflare R2 配置不完整，将使用本地存储作为备选方案');
+} else {
+  console.log('Cloudflare R2 配置已完成，使用以下配置:');
+  console.log(`- 账户ID: ${R2_ACCOUNT_ID}`);
+  console.log(`- 存储桶: ${R2_BUCKET_NAME}`);
+  console.log(`- 公共URL: ${R2_PUBLIC_URL}`);
 }
 
 // 创建 S3 客户端
-const s3Client = new S3Client({
+const s3Client = isR2Configured ? new S3Client({
   region: 'auto',
   endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
     accessKeyId: R2_ACCESS_KEY_ID || '',
     secretAccessKey: R2_SECRET_ACCESS_KEY || '',
   },
-});
+}) : null;
 
 export interface UploadOptions {
   contentType?: string;
@@ -39,7 +48,7 @@ export async function uploadBufferToR2(
 ): Promise<string> {
   try {
     // 检查配置
-    if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
+    if (!isR2Configured || !s3Client) {
       throw new Error('Cloudflare R2 配置不完整');
     }
 
@@ -64,9 +73,11 @@ export async function uploadBufferToR2(
     });
 
     await upload.done();
-
+    
     // 返回公共 URL
-    return `${R2_PUBLIC_URL}/${key}`;
+    const fileUrl = `${R2_PUBLIC_URL}/${key}`;
+    console.log(`文件已上传到 Cloudflare R2，URL: ${fileUrl}`);
+    return fileUrl;
   } catch (error) {
     console.error('上传到 Cloudflare R2 失败:', error);
     throw new Error(`上传到 Cloudflare R2 失败: ${error instanceof Error ? error.message : String(error)}`);
@@ -107,7 +118,7 @@ export async function uploadBase64ToR2(
 export async function deleteFileFromR2(key: string): Promise<void> {
   try {
     // 检查配置
-    if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
+    if (!isR2Configured || !s3Client) {
       throw new Error('Cloudflare R2 配置不完整');
     }
 
@@ -118,6 +129,7 @@ export async function deleteFileFromR2(key: string): Promise<void> {
     });
     
     await s3Client.send(deleteCommand);
+    console.log(`文件已从 Cloudflare R2 删除: ${key}`);
   } catch (error) {
     console.error('从 Cloudflare R2 删除文件失败:', error);
     throw new Error(`从 Cloudflare R2 删除文件失败: ${error instanceof Error ? error.message : String(error)}`);

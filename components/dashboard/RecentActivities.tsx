@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getMockActivities } from "@/lib/mockData";
+import { getRecentActivities } from "@/lib/dataUtils";
 
 interface Activity {
   id: string;
@@ -15,17 +16,39 @@ interface Activity {
   projectName: string;
 }
 
-export default function RecentActivities() {
+interface RecentActivitiesProps {
+  useRealData?: boolean;
+}
+
+export default function RecentActivities({ useRealData = true }: RecentActivitiesProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 获取模拟活动数据
+    // 获取活动数据
     const fetchActivities = async () => {
       try {
-        const data = await getMockActivities();
-        // 使用类型断言确保数据类型兼容
-        setActivities(data as Activity[]);
+        if (useRealData) {
+          // 使用真实数据
+          const realActivities = getRecentActivities(true);
+          // 将真实数据转换为活动格式
+          const formattedActivities = realActivities.map((activity, index) => ({
+            id: `real-${index}`,
+            title: activity.type,
+            description: `项目: ${activity.project}`,
+            timestamp: new Date().toISOString(),
+            type: (activity.type === '项目完结' ? 'complete' : 'update') as Activity['type'],
+            priority: 'medium' as Activity['priority'],
+            projectId: index.toString(),
+            projectName: activity.project
+          }));
+          setActivities(formattedActivities);
+        } else {
+          // 使用模拟数据
+          const data = await getMockActivities();
+          // 使用类型断言确保数据类型兼容
+          setActivities(data as Activity[]);
+        }
       } catch (error) {
         console.error("获取活动数据失败:", error);
       } finally {
@@ -34,7 +57,7 @@ export default function RecentActivities() {
     };
 
     fetchActivities();
-  }, []);
+  }, [useRealData]);
 
   // 获取活动类型对应的图标和颜色
   const getActivityIcon = (type: string) => {

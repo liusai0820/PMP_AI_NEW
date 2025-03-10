@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import mammoth from 'mammoth';
 
 // OpenRouter API配置
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
@@ -7,16 +8,14 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // 支持的模型列表
 const SUPPORTED_MODELS = [
   'anthropic/claude-3-opus',
-  'anthropic/claude-3-sonnet',
   'anthropic/claude-3-haiku',
   'openai/gpt-4-turbo',
-  'openai/gpt-4o',
-  'google/gemini-pro',
-  'meta-llama/llama-3-70b-instruct'
+  'google/gemini-2.0-pro-exp-02-05:free',
+  'google/gemini-2.0-flash-exp:free'
 ];
 
 // 默认模型
-const DEFAULT_MODEL = 'anthropic/claude-3-sonnet';
+const DEFAULT_MODEL = 'google/gemini-2.0-flash-exp:free';
 
 // 定义分析结果的接口
 interface AnalysisResult {
@@ -60,7 +59,7 @@ const ANALYSIS_PROMPT = `
 
 请以结构化的JSON格式返回分析结果，必须严格遵循以下结构：
 {
-  "summary": ["要点1", "要点2", "要点3", ...],
+  "summary": ["要点1", "要点2", "要点3"],
   "projectInfo": {
     "name": "项目名称",
     "status": "项目状态",
@@ -73,26 +72,23 @@ const ANALYSIS_PROMPT = `
       "name": "指标名称1",
       "value": 数字值,
       "status": "success|warning|danger|normal"
-    },
-    ...
+    }
   ],
   "milestones": [
     {
       "name": "里程碑名称1",
       "date": "日期",
       "status": "completed|in-progress|pending"
-    },
-    ...
+    }
   ],
   "risks": [
     {
       "name": "风险名称1",
       "impact": "高|中|低",
       "mitigation": "缓解措施"
-    },
-    ...
+    }
   ],
-  "recommendations": ["建议1", "建议2", "建议3", ...]
+  "recommendations": ["建议1", "建议2", "建议3"]
 }
 
 报告内容：
@@ -100,25 +96,28 @@ const ANALYSIS_PROMPT = `
 `;
 
 // 文件类型处理器
-const extractTextFromFile = (fileContent: string, fileType: string): string => {
-  // 在实际应用中，这里会根据不同的文件类型进行处理
-  // 例如，使用pdf.js处理PDF文件，使用mammoth处理DOCX文件等
-  
-  // 根据文件类型进行不同处理
-  if (fileType.includes('pdf')) {
-    // PDF处理逻辑（简化）
-    return `[PDF内容] ${fileContent.substring(0, 1000)}...`;
-  } else if (fileType.includes('word') || fileType.includes('docx')) {
-    // Word文档处理逻辑（简化）
-    return `[Word内容] ${fileContent.substring(0, 1000)}...`;
-  } else if (fileType.includes('excel') || fileType.includes('xlsx')) {
-    // Excel文档处理逻辑（简化）
-    return `[Excel内容] ${fileContent.substring(0, 1000)}...`;
+async function extractTextFromFile(fileContent: string | Buffer, fileType: string): Promise<string> {
+  try {
+    // 处理 DOCX 文件
+    if (fileType.includes('docx')) {
+      // 确保 fileContent 是 Buffer
+      const buffer = typeof fileContent === 'string' ? Buffer.from(fileContent, 'base64') : fileContent;
+      const result = await mammoth.extractRawText({ buffer });
+      return result.value;
+    }
+    
+    // 处理纯文本
+    if (typeof fileContent === 'string') {
+      return fileContent;
+    }
+    
+    // 处理其他二进制文件
+    return Buffer.from(fileContent).toString('utf-8');
+  } catch (error) {
+    console.error('文件内容提取错误:', error);
+    throw new Error('无法从文件中提取文本内容');
   }
-  
-  // 默认处理，返回原始内容
-  return fileContent;
-};
+}
 
 export async function POST(request: Request) {
   try {
@@ -144,7 +143,16 @@ export async function POST(request: Request) {
     const model = SUPPORTED_MODELS.includes(modelId) ? modelId : DEFAULT_MODEL;
     
     // 处理文件内容
-    const processedContent = extractTextFromFile(reportContent, fileType || 'text/plain');
+    console.log('开始提取文本...');
+    const processedContent = await extractTextFromFile(reportContent, fileType || 'text/plain');
+    console.log('文本提取完成');
+    
+    if (!processedContent || processedContent.length < 100) {
+      return NextResponse.json(
+        { success: false, error: '提取的文本内容太短或为空' },
+        { status: 400 }
+      );
+    }
     
     // 构建提示词
     const prompt = ANALYSIS_PROMPT.replace('{reportContent}', processedContent);
@@ -165,7 +173,7 @@ export async function POST(request: Request) {
         messages: [
           {
             role: 'system',
-            content: '你是一位专业的项目管理顾问，擅长分析项目报告并提供洞察。请以JSON格式返回分析结果。'
+            content: '你是一位专业的项目管理顾问。请分析项目报告并以JSON格式返回结果，不要包含任何其他格式或标记。'
           },
           {
             role: 'user',
@@ -173,8 +181,8 @@ export async function POST(request: Request) {
           }
         ],
         max_tokens: maxTokens,
-        temperature: 0.2, // 低温度以获得更确定性的输出
-        response_format: { type: 'json_object' } // 请求JSON格式的响应
+        temperature: 0.2,
+        response_format: { type: 'json_object' }
       })
     });
     
@@ -182,7 +190,6 @@ export async function POST(request: Request) {
       const errorData = await response.json();
       console.error('OpenRouter API错误:', errorData);
       
-      // 更详细的错误信息
       let errorMessage = '分析服务暂时不可用';
       if (errorData.error) {
         errorMessage = `API错误: ${errorData.error.message || errorData.error}`;
@@ -209,7 +216,9 @@ export async function POST(request: Request) {
     // 尝试解析JSON响应
     let parsedResult: AnalysisResult;
     try {
-      parsedResult = JSON.parse(analysisResult) as AnalysisResult;
+      // 移除可能的 Markdown 代码块标记
+      const cleanJson = analysisResult.replace(/```json\n|\n```/g, '');
+      parsedResult = JSON.parse(cleanJson) as AnalysisResult;
       
       // 验证结果格式
       const requiredFields = ['summary', 'projectInfo', 'metrics', 'milestones', 'risks', 'recommendations'];
@@ -232,7 +241,6 @@ export async function POST(request: Request) {
       );
     }
     
-    // 保存分析结果到数据库（模拟）
     console.log('分析完成，返回结果');
     
     return NextResponse.json({

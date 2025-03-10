@@ -1,7 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
-import { projectList } from '@/lib/mockData';
+import React, { useState, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, CheckCircle2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Project {
   id: string;
@@ -16,90 +20,94 @@ interface ProjectSelectorProps {
   selectedProject: Project | null;
 }
 
-const ProjectSelector: React.FC<ProjectSelectorProps> = ({ onProjectSelect, selectedProject }) => {
-  const [showSidebar, setShowSidebar] = useState(true);
+// 模拟项目数据
+const mockProjects: Project[] = [
+  { id: 'proj-001', name: '高时空解析度电子显微镜关键部分研究', department: '研发部', progress: 75, documents: 12 },
+  { id: 'proj-002', name: '先进航空材料预应力工程与纳米技术研发', department: '研发部', progress: 60, documents: 8 },
+  { id: 'proj-003', name: '深港智慧医疗机器人开放创新平台', department: '医疗部', progress: 90, documents: 15 },
+  { id: 'proj-004', name: '大湾区生物医药研发创新中心', department: '医疗部', progress: 45, documents: 7 },
+  { id: 'proj-005', name: '三相位法百万级像素飞行时间成像机理研究', department: '研发部', progress: 30, documents: 5 },
+  { id: 'proj-006', name: '低功耗、高速、高可靠性VCSEL光芯片机理研究', department: '研发部', progress: 85, documents: 10 },
+  { id: 'proj-007', name: '香港中文大学（深圳）未来智联网络研究院', department: '研发部', progress: 50, documents: 9 },
+  { id: 'proj-008', name: '面向行业赋能的计算机视觉关键技术研究', department: '研发部', progress: 70, documents: 11 },
+];
+
+export default function ProjectSelector({ onProjectSelect, selectedProject }: ProjectSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [projects, setProjects] = useState<Project[]>([]);
   
-  const filteredProjects = searchTerm
-    ? projectList.filter(project => 
-        project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.department.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : projectList;
+  // 模拟从API获取项目列表
+  useEffect(() => {
+    // 在实际应用中，这里应该是API调用
+    setProjects(mockProjects);
+  }, []);
+  
+  // 过滤项目
+  const filteredProjects = projects.filter(project => 
+    project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project.department.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
   return (
-    <div className={`${showSidebar ? 'w-64' : 'w-0'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col overflow-hidden`}>
-      {showSidebar && (
-        <>
-          <div className="p-3 border-b border-gray-200">
-            <h2 className="text-base font-medium text-gray-900">项目知识库</h2>
-            <p className="text-xs text-gray-600 mt-1">选择项目以获取相关背景信息</p>
-          </div>
-          
-          <div className="overflow-y-auto flex-1">
-            <div className="p-2">
-              <div className="relative">
-                <input
-                  type="text"
-                  className="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="搜索项目..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            
-            <ul className="divide-y divide-gray-200">
-              {filteredProjects.map(project => (
-                <li 
-                  key={project.id}
-                  className={`px-3 py-2 hover:bg-gray-50 cursor-pointer ${selectedProject?.id === project.id ? 'bg-blue-50' : ''}`}
-                  onClick={() => onProjectSelect(selectedProject?.id === project.id ? null : project)}
-                >
-                  <div className="flex justify-between">
-                    <div className="w-full">
-                      <p className="text-sm font-medium text-gray-900">{project.name}</p>
-                      <div className="flex items-center text-xs text-gray-500 mt-0.5">
-                        <span>{project.id}</span>
-                        <span className="mx-1">•</span>
-                        <span>{project.department}</span>
-                      </div>
-                      <div className="mt-1.5 flex justify-between items-center">
-                        <div className="w-full max-w-28">
-                          <div className="h-1.5 w-full bg-gray-200 rounded-full">
-                            <div
-                              className="h-1.5 rounded-full bg-blue-600"
-                              style={{ width: `${project.progress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                        <span className="ml-2 text-xs font-medium text-gray-500">{project.progress}%</span>
-                      </div>
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="搜索项目..."
+          className="pl-8"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      
+      <ScrollArea className="h-[calc(100vh-240px)]">
+        <div className="space-y-1 pr-3">
+          {filteredProjects.length > 0 ? (
+            filteredProjects.map(project => (
+              <Button
+                key={project.id}
+                variant={selectedProject?.id === project.id ? "secondary" : "ghost"}
+                className="w-full justify-start text-left h-auto py-3"
+                onClick={() => onProjectSelect(project)}
+              >
+                <div className="flex flex-col items-start gap-1 w-full">
+                  <div className="flex items-center w-full">
+                    <span className="font-medium text-sm truncate flex-1">
+                      {project.name}
+                    </span>
+                    {selectedProject?.id === project.id && (
+                      <CheckCircle2 className="h-4 w-4 ml-2 text-primary flex-shrink-0" />
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-between w-full">
+                    <Badge variant="outline" className="text-xs font-normal">
+                      {project.department}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      进度: {project.progress}%
+                    </span>
+                  </div>
+                  
+                  <div className="w-full mt-1">
+                    <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary rounded-full"
+                        style={{ width: `${project.progress}%` }}
+                      />
                     </div>
                   </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </>
-      )}
-      
-      <button
-        onClick={() => setShowSidebar(!showSidebar)}
-        className="absolute top-3 right-3 p-1 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-      >
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={showSidebar ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h7"} />
-        </svg>
-      </button>
+                </div>
+              </Button>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              未找到匹配的项目
+            </div>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
-};
-
-export default ProjectSelector; 
+} 

@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 项目敏感数据文件
+/public/里程碑信息.csv
+/public/项目基本信息.csv
+/public/basicinfomation.csv
+/public/temp/
+/public/temp/*.pdf
+*.pdf

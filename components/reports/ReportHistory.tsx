@@ -125,7 +125,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport }) => {
     };
 
     fetchReports();
-  }, []);
+  }, [mockReports]);
 
   // 过滤和排序报告
   useEffect(() => {
